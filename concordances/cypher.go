@@ -56,7 +56,7 @@ func (pcw CypherDriver) ReadByConceptId(identifiers []string) (concordances Conc
 		RETURN collect({uuid:p.uuid, types:labels(p), Identifier:{authority:i.authority, identifierValue:i.value}}) as rs
 		`,
 		Parameters: neoism.Props{"identifiers": identifiers},
-		Result: &results,
+		Result:     &results,
 	}
 
 	err = pcw.db.Cypher(query)
