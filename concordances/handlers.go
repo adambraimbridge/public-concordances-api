@@ -65,18 +65,18 @@ func GetConcordances(w http.ResponseWriter, r *http.Request) {
 
 	m, _ := url.ParseQuery(r.URL.RawQuery)
 
-	_, conceptIdExist := m["conceptId"]
+	_, conceptIDExist := m["conceptId"]
 	_, authorityExist := m["authority"]
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if conceptIdExist && authorityExist {
+	if conceptIDExist && authorityExist {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(
 			`{"message": "If conceptId is present then authority is not a valid parameter"}`))
 		return
 	}
 
-	if !conceptIdExist && !authorityExist {
+	if !conceptIDExist && !authorityExist {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(
 			`{"message": "If conceptId is absent then authority is mandatory"}`))
@@ -90,7 +90,7 @@ func GetConcordances(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	concordance, found, err := processParams(conceptIdExist, authorityExist, m)
+	concordance, found, err := processParams(conceptIDExist, authorityExist, m)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -110,14 +110,14 @@ func GetConcordances(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(concordance)
 }
 
-func processParams(conceptIdExist bool, authorityExist bool, m url.Values) (concordances Concordances, found bool, err error) {
-	if conceptIdExist {
+func processParams(conceptIDExist bool, authorityExist bool, m url.Values) (concordances Concordances, found bool, err error) {
+	if conceptIDExist {
 		conceptUuids := []string{}
 
 		for _, uri := range m["conceptId"] {
-			conceptUuids = append(conceptUuids, strings.TrimPrefix(uri, thingUriPrefix))
+			conceptUuids = append(conceptUuids, strings.TrimPrefix(uri, thingURIPrefix))
 		}
-		return ConcordanceDriver.ReadByConceptId(conceptUuids)
+		return ConcordanceDriver.ReadByConceptID(conceptUuids)
 	}
 
 	if authorityExist {
@@ -128,5 +128,5 @@ func processParams(conceptIdExist bool, authorityExist bool, m url.Values) (conc
 }
 
 const (
-	thingUriPrefix = "http://api.ft.com/things/"
+	thingURIPrefix = "http://api.ft.com/things/"
 )

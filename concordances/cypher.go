@@ -10,7 +10,7 @@ import (
 
 // Driver interface
 type Driver interface {
-	ReadByConceptId(ids []string) (concordances Concordances, found bool, err error)
+	ReadByConceptID(ids []string) (concordances Concordances, found bool, err error)
 	ReadByAuthority(authority string, ids []string) (concordances Concordances, found bool, err error)
 	CheckConnectivity() error
 }
@@ -41,7 +41,7 @@ func (pcw CypherDriver) CheckConnectivity() error {
 }
 
 type neoReadStruct struct {
-	Uuid       string     `json:"uuid"`
+	UUID       string     `json:"uuid"`
 	Types      []string   `json:"types"`
 	Identifier Identifier `json:"identifier"`
 }
@@ -50,7 +50,7 @@ type neoResultStrunct struct {
 	Rs []neoReadStruct
 }
 
-func (pcw CypherDriver) ReadByConceptId(identifiers []string) (concordances Concordances, found bool, err error) {
+func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Concordances, found bool, err error) {
 	concordances = Concordances{}
 	results := []neoResultStrunct{}
 	query := &neoism.CypherQuery{
@@ -107,8 +107,8 @@ func neoReadStructToConcordances(neo *[]neoReadStruct, env string) (concordances
 	for i, neoCon := range *neo {
 		var con = Concordance{}
 		var concept = Concept{}
-		concept.ID = neoCon.Uuid
-		concept.APIURL = mapper.APIURL(neoCon.Uuid, neoCon.Types, env)
+		concept.ID = neoCon.UUID
+		concept.APIURL = mapper.APIURL(neoCon.UUID, neoCon.Types, env)
 		con.Concept = concept
 		con.Identifier = neoCon.Identifier
 		concordances.Concordance[i] = con

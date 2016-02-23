@@ -14,18 +14,18 @@ import (
 )
 
 // TestNeoReadStructToPersonMandatoryFields checks that madatory fields are set even if they are empty or nil / null
-func TestNeoReadByConceptIdToConcordancesMandatoryFields(t *testing.T) {
+func TestNeoReadByConceptIDToConcordancesMandatoryFields(t *testing.T) {
 
 	assert := assert.New(t)
 	db := getDatabaseConnectionAndCheckClean(t, assert)
 	batchRunner := neoutils.NewBatchCypherRunner(neoutils.StringerDb{db}, 1)
 
 	peopleRW, organisationRW := getServices(t, assert, db, &batchRunner)
-	writeJsonToService(peopleRW, "./fixtures/Person-Dan_Murphy-868c3c17-611c-4943-9499-600ccded71f3.json", assert)
-	writeJsonToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
+	writeJSONToService(peopleRW, "./fixtures/Person-Dan_Murphy-868c3c17-611c-4943-9499-600ccded71f3.json", assert)
+	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
 
 	undertest := NewCypherDriver(db, "prod")
-	cs, found, err := undertest.ReadByConceptId([]string{"868c3c17-611c-4943-9499-600ccded71f3"})
+	cs, found, err := undertest.ReadByConceptID([]string{"868c3c17-611c-4943-9499-600ccded71f3"})
 	assert.NoError(err)
 	assert.True(found)
 	assert.NotEmpty(cs.Concordance)
@@ -39,8 +39,8 @@ func TestNeoReadByAuthorityToConcordancesMandatoryFields(t *testing.T) {
 	batchRunner := neoutils.NewBatchCypherRunner(neoutils.StringerDb{db}, 1)
 
 	peopleRW, organisationRW := getServices(t, assert, db, &batchRunner)
-	writeJsonToService(peopleRW, "./fixtures/Person-Dan_Murphy-868c3c17-611c-4943-9499-600ccded71f3.json", assert)
-	writeJsonToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
+	writeJSONToService(peopleRW, "./fixtures/Person-Dan_Murphy-868c3c17-611c-4943-9499-600ccded71f3.json", assert)
+	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
 
 	undertest := NewCypherDriver(db, "prod")
 	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FACTSET-PPL", []string{"DANMUR-1"})
@@ -91,8 +91,8 @@ func cleanDB(db *neoism.Database, t *testing.T, assert *assert.Assertions) {
 	assert.NoError(err)
 }
 
-func writeJsonToService(service baseftrwapp.Service, pathToJsonFile string, assert *assert.Assertions) {
-	f, err := os.Open(pathToJsonFile)
+func writeJSONToService(service baseftrwapp.Service, pathToJSONFile string, assert *assert.Assertions) {
+	f, err := os.Open(pathToJSONFile)
 	assert.NoError(err)
 	dec := json.NewDecoder(f)
 	inst, _, errr := service.DecodeJSON(dec)

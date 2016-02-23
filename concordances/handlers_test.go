@@ -11,7 +11,7 @@ import (
 
 var (
 	server          *httptest.Server
-	concordanceUrl  string
+	concordanceURL  string
 	isFound         bool
 	conceptIds      []string
 	authorities     []string
@@ -20,7 +20,7 @@ var (
 
 type mockConcordanceDriver struct{}
 
-func (driver mockConcordanceDriver) ReadByConceptId(ids []string) (concordances Concordances, found bool, err error) {
+func (driver mockConcordanceDriver) ReadByConceptID(ids []string) (concordances Concordances, found bool, err error) {
 	conceptIds = ids
 	return Concordances{}, isFound, nil
 }
@@ -39,14 +39,14 @@ func init() {
 	r := mux.NewRouter()
 	r.HandleFunc("/concordances", GetConcordances).Methods("GET")
 	server = httptest.NewServer(r)
-	concordanceUrl = fmt.Sprintf("%s/concordances", server.URL) //Grab the address for the API endpoint
+	concordanceURL = fmt.Sprintf("%s/concordances", server.URL) //Grab the address for the API endpoint
 	isFound = true
 }
 
 func TestCanGetOneAuthority(t *testing.T) {
 	assert := assert.New(t)
 	isFound = true
-	req, _ := http.NewRequest("GET", concordanceUrl+"?authority=some-authority&identifierValue=some-value", nil)
+	req, _ := http.NewRequest("GET", concordanceURL+"?authority=some-authority&identifierValue=some-value", nil)
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
 	assert.EqualValues(200, res.StatusCode)
@@ -58,7 +58,7 @@ func TestCanGetOneAuthority(t *testing.T) {
 func TestCanGetMultipleIdentifiersByAuthority(t *testing.T) {
 	assert := assert.New(t)
 	isFound = true
-	req, _ := http.NewRequest("GET", concordanceUrl+"?authority=some-authority&identifierValue=some-value&identifierValue=some-value2", nil)
+	req, _ := http.NewRequest("GET", concordanceURL+"?authority=some-authority&identifierValue=some-value&identifierValue=some-value2", nil)
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
 	assert.EqualValues(200, res.StatusCode)
@@ -71,7 +71,7 @@ func TestCanGetMultipleIdentifiersByAuthority(t *testing.T) {
 func TestReturnBadRequestGivenMoreThanOneAuthority(t *testing.T) {
 	assert := assert.New(t)
 	isFound = true
-	req, _ := http.NewRequest("GET", concordanceUrl+"?authority=some-authority&identifierValue=some-value&authority=some-authority-yet-again", nil)
+	req, _ := http.NewRequest("GET", concordanceURL+"?authority=some-authority&identifierValue=some-value&authority=some-authority-yet-again", nil)
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
 	assert.EqualValues(400, res.StatusCode)
@@ -80,7 +80,7 @@ func TestReturnBadRequestGivenMoreThanOneAuthority(t *testing.T) {
 func TestCanGetOneConcept(t *testing.T) {
 	assert := assert.New(t)
 	isFound = true
-	req, _ := http.NewRequest("GET", concordanceUrl+"?conceptId=bob", nil)
+	req, _ := http.NewRequest("GET", concordanceURL+"?conceptId=bob", nil)
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
 	assert.EqualValues(200, res.StatusCode)
@@ -91,7 +91,7 @@ func TestCanGetOneConcept(t *testing.T) {
 func TestCanGetMultipleConcepts(t *testing.T) {
 	assert := assert.New(t)
 	isFound = true
-	req, _ := http.NewRequest("GET", concordanceUrl+"?conceptId=bob&conceptId=carlos", nil)
+	req, _ := http.NewRequest("GET", concordanceURL+"?conceptId=bob&conceptId=carlos", nil)
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
 	assert.EqualValues(200, res.StatusCode)
@@ -102,7 +102,7 @@ func TestCanGetMultipleConcepts(t *testing.T) {
 func TestCanParseConceptURI(t *testing.T) {
 	assert := assert.New(t)
 	isFound = true
-	req, _ := http.NewRequest("GET", concordanceUrl+"?conceptId=http://api.ft.com/things/8138ca3f-b80d-3ef8-ad59-6a9b6ea5f15e", nil)
+	req, _ := http.NewRequest("GET", concordanceURL+"?conceptId=http://api.ft.com/things/8138ca3f-b80d-3ef8-ad59-6a9b6ea5f15e", nil)
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
 	assert.EqualValues(200, res.StatusCode)
@@ -113,7 +113,7 @@ func TestCanParseConceptURI(t *testing.T) {
 func TestCanNotRequestAuthorityAndConceptId(t *testing.T) {
 	assert := assert.New(t)
 	isFound = true
-	req, _ := http.NewRequest("GET", concordanceUrl+"?conceptId=bob&authority=high-and-mighty", nil)
+	req, _ := http.NewRequest("GET", concordanceURL+"?conceptId=bob&authority=high-and-mighty", nil)
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
 	assert.EqualValues(400, res.StatusCode)
@@ -123,7 +123,7 @@ func TestCanNotRequestAuthorityAndConceptId(t *testing.T) {
 func TestCanNotRequestWithoutAuthorityOrConceptId(t *testing.T) {
 	assert := assert.New(t)
 	isFound = true
-	req, _ := http.NewRequest("GET", concordanceUrl+"?randomRequestParam=bob", nil)
+	req, _ := http.NewRequest("GET", concordanceURL+"?randomRequestParam=bob", nil)
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
 	assert.EqualValues(400, res.StatusCode)
