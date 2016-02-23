@@ -46,9 +46,13 @@ type neoReadStruct struct {
 	Identifier Identifier `json:"identifier"`
 }
 
+type neoResultStrunct struct {
+	Rs []neoReadStruct
+}
+
 func (pcw CypherDriver) ReadByConceptId(identifiers []string) (concordances Concordances, found bool, err error) {
 	concordances = Concordances{}
-	results := []struct{ Rs []neoReadStruct }{}
+	results := []neoResultStrunct{}
 	query := &neoism.CypherQuery{
 		Statement: `
 		MATCH (p:Concept)<-[:IDENTIFIES]-(i:Identifier)
@@ -59,29 +63,12 @@ func (pcw CypherDriver) ReadByConceptId(identifiers []string) (concordances Conc
 		Result:     &results,
 	}
 
-	err = pcw.db.Cypher(query)
-	fmt.Printf("neo_err:%s\n", err)
-	if err != nil {
-		log.Errorf("Error looking up uuid %s with query %s from neoism: %+v\n", identifiers, query.Statement, err)
-		return Concordances{}, false, fmt.Errorf("Error accessing Concordance datastore for identifier: %s", identifiers)
-	}
-
-	log.Debugf("CypherResult ReadConcordance for identifier: %s was: %+v", identifiers, results)
-
-	fmt.Printf("RESULTS:%s\n", results)
-	if (len(results)) == 0 {
-		fmt.Printf("ARGH\n")
-		return Concordances{}, false, nil
-	}
-
-	concordances = neoReadStructToConcordances(results[0].Rs, pcw.env)
-	log.Debugf("Returning %v", concordances)
-	return concordances, true, nil
+	return processCypherQueryToConcordances(pcw, query, &results)
 }
 
 func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []string) (concordances Concordances, found bool, err error) {
 	concordances = Concordances{}
-	results := []struct{ Rs []neoReadStruct }{}
+	results := []neoResultStrunct{}
 	query := &neoism.CypherQuery{
 		Statement: `
 		MATCH (p:Concept)<-[:IDENTIFIES]-(i:Identifier)
@@ -94,32 +81,30 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 		},
 		Result: &results,
 	}
+	return processCypherQueryToConcordances(pcw, query, &results)
+}
 
-	err = pcw.db.Cypher(query)
-	fmt.Printf("neo_err:%s\n", err)
+func processCypherQueryToConcordances(pcw CypherDriver, q *neoism.CypherQuery, results *[]neoResultStrunct) (concordances Concordances, found bool, err error) {
+	err = pcw.db.Cypher(q)
 	if err != nil {
-		log.Errorf("Error looking up uuid %s with query %s from neoism: %+v\n", identifierValues, query.Statement, err)
-		return Concordances{}, false, fmt.Errorf("Error accessing Concordance datastore for identifierValues: %s", identifierValues)
+		log.Errorf("Error looking up Concordances with query %s from neoism: %+v\n", q.Statement, err)
+		return Concordances{}, false, fmt.Errorf("Error accessing Concordance datastore for identifier:")
 	}
 
-	log.Debugf("CypherResult ReadConcordance for identifierValues: %s was: %+v", identifierValues, results)
-
-	fmt.Printf("RESULTS:%s\n", results)
-	if (len(results)) == 0 {
-		fmt.Printf("ARGH\n")
+	if (len(*results)) == 0 {
 		return Concordances{}, false, nil
 	}
 
-	concordances = neoReadStructToConcordances(results[0].Rs, pcw.env)
+	concordances = neoReadStructToConcordances(&(*results)[0].Rs, pcw.env)
 	log.Debugf("Returning %v", concordances)
 	return concordances, true, nil
 }
 
-func neoReadStructToConcordances(neo []neoReadStruct, env string) Concordances {
-	var concordances = Concordances{
-		Concordance: make([]Concordance, len(neo)),
+func neoReadStructToConcordances(neo *[]neoReadStruct, env string) (concordances Concordances) {
+	concordances = Concordances{
+		Concordance: make([]Concordance, len(*neo)),
 	}
-	for i, neoCon := range neo {
+	for i, neoCon := range *neo {
 		var con = Concordance{}
 		var concept = Concept{}
 		concept.ID = neoCon.Uuid
