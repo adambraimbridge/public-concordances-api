@@ -51,8 +51,8 @@ func (pcw CypherDriver) ReadByConceptId(identifiers []string) (concordances Conc
 	results := []struct{ Rs []neoReadStruct }{}
 	query := &neoism.CypherQuery{
 		Statement: `
-		MATCH (p:Concept) where p.uuid in {identifiers}
-		MATCH (p)<-[:IDENTIFIES]-(i:Identifier)
+		MATCH (p:Concept)<-[:IDENTIFIES]-(i:Identifier)
+		WHERE p.uuid in {identifiers}
 		RETURN collect({uuid:p.uuid, types:labels(p), Identifier:{authority:i.authority, identifierValue:i.value}}) as rs
 		`,
 		Parameters: neoism.Props{"identifiers": identifiers},
