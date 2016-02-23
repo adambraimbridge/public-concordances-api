@@ -107,7 +107,7 @@ func neoReadStructToConcordances(neo *[]neoReadStruct, env string) (concordances
 	for i, neoCon := range *neo {
 		var con = Concordance{}
 		var concept = Concept{}
-		concept.ID = neoCon.UUID
+		concept.ID = mapper.IDURL(neoCon.UUID)
 		concept.APIURL = mapper.APIURL(neoCon.UUID, neoCon.Types, env)
 		con.Concept = concept
 		con.Identifier = neoCon.Identifier
