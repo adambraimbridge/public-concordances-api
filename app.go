@@ -84,9 +84,9 @@ func runServer(neoURL string, port string, cacheDuration string, env string) {
 	servicesRouter.HandleFunc("/__gtg", concordances.GoodToGo)
 
 	// Then API specific ones:
-	servicesRouter.HandleFunc("/concordances/{uuid}", concordances.GetConcordances).Methods("GET")
+	servicesRouter.HandleFunc("/concordances", concordances.GetConcordances).Methods("GET")
 
-	servicesRouter.HandleFunc("/concordances/{uuid}", concordances.MethodNotAllowedHandler)
+	servicesRouter.HandleFunc("/concordances", concordances.MethodNotAllowedHandler)
 
 	var monitoringRouter http.Handler = servicesRouter
 	monitoringRouter = httphandlers.TransactionAwareRequestLoggingHandler(log.StandardLogger(), monitoringRouter)

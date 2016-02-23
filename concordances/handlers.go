@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 
+	"errors"
 	"github.com/Financial-Times/go-fthealth/v1a"
 	log "github.com/Sirupsen/logrus"
-	"github.com/gorilla/mux"
+	"strings"
 )
 
 // ConcordanceDriver for cypher queries
@@ -60,20 +62,42 @@ func MethodNotAllowedHandler(w http.ResponseWriter, r *http.Request) {
 
 // GetConcordances is the public API
 func GetConcordances(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	uuid := vars["uuid"]
+
+	m, _ := url.ParseQuery(r.URL.RawQuery)
+
+	_, conceptIdExist := m["conceptId"]
+	_, authorityExist := m["authority"]
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if uuid == "" {
-		http.Error(w, "uuid required", http.StatusBadRequest)
+	if conceptIdExist && authorityExist {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(
+			`{"message": "If conceptId is present then authority is not a valid parameter"}`))
 		return
 	}
-	concordance, found, err := ConcordanceDriver.Read(uuid)
+
+	if !conceptIdExist && !authorityExist {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(
+			`{"message": "If conceptId is absent then authority is mandatory"}`))
+		return
+	}
+
+	if len(m["authority"]) > 1 {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(
+			`{"message": "Multiple authorities are not permitted"}`))
+		return
+	}
+
+	concordance, found, err := processParams(conceptIdExist, authorityExist, m)
+
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"message": "` + err.Error() + `"}`))
 		return
 	}
+
 	if !found {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte(`{"message":"Concordance not found."}`))
@@ -85,3 +109,24 @@ func GetConcordances(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(concordance)
 }
+
+func processParams(conceptIdExist bool, authorityExist bool, m url.Values) (concordances Concordances, found bool, err error) {
+	if conceptIdExist {
+		conceptUuids := []string{}
+
+		for _, uri := range m["conceptId"] {
+			conceptUuids = append(conceptUuids, strings.TrimPrefix(uri, thingUriPrefix))
+		}
+		return ConcordanceDriver.ReadByConceptId(conceptUuids)
+	}
+
+	if authorityExist {
+		return ConcordanceDriver.ReadByAuthority(m.Get("authority"), m["identifierValue"])
+	}
+
+	return Concordances{}, false, errors.New("Niether conceptId nor authority were present")
+}
+
+const (
+	thingUriPrefix = "http://api.ft.com/things/"
+)
