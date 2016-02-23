@@ -79,8 +79,40 @@ func (pcw CypherDriver) ReadByConceptId(identifiers []string) (concordances Conc
 	return concordances, true, nil
 }
 
-func (pcw CypherDriver) ReadByAuthority(authority string, ids []string) (concordances Concordances, found bool, err error) {
-	return Concordances{}, false, nil
+func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []string) (concordances Concordances, found bool, err error) {
+	concordances = Concordances{}
+	results := []struct{ Rs []neoReadStruct }{}
+	query := &neoism.CypherQuery{
+		Statement: `
+		MATCH (p:Concept)<-[:IDENTIFIES]-(i:Identifier)
+		WHERE i.value in {identifierValues} AND i.authority = {authority}
+		RETURN collect({uuid:p.uuid, types:labels(p), Identifier:{authority:i.authority, identifierValue:i.value}}) as rs
+		`,
+		Parameters: neoism.Props{
+			"identifierValues": identifierValues,
+			"authority":        authority,
+		},
+		Result: &results,
+	}
+
+	err = pcw.db.Cypher(query)
+	fmt.Printf("neo_err:%s\n", err)
+	if err != nil {
+		log.Errorf("Error looking up uuid %s with query %s from neoism: %+v\n", identifierValues, query.Statement, err)
+		return Concordances{}, false, fmt.Errorf("Error accessing Concordance datastore for identifierValues: %s", identifierValues)
+	}
+
+	log.Debugf("CypherResult ReadConcordance for identifierValues: %s was: %+v", identifierValues, results)
+
+	fmt.Printf("RESULTS:%s\n", results)
+	if (len(results)) == 0 {
+		fmt.Printf("ARGH\n")
+		return Concordances{}, false, nil
+	}
+
+	concordances = neoReadStructToConcordances(results[0].Rs, pcw.env)
+	log.Debugf("Returning %v", concordances)
+	return concordances, true, nil
 }
 
 func neoReadStructToConcordances(neo []neoReadStruct, env string) Concordances {
