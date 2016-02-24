@@ -28,7 +28,7 @@ public class Concordance {
 */
 type Concordance struct {
 	Concept    Concept    `json:"concept,omitempty"`
-	Identifier Identifier `json:"indentifier,omitempty"`
+	Identifier Identifier `json:"identifier,omitempty"`
 }
 
 // Identifier identifies the concept with alternative identity
