@@ -8,6 +8,7 @@ import (
 	"github.com/Financial-Times/go-fthealth/v1a"
 	"github.com/Financial-Times/http-handlers-go/httphandlers"
 	"github.com/Financial-Times/public-concordances-api/concordances"
+	status "github.com/Financial-Times/service-status-go/httphandlers"
 
 	"fmt"
 	"strconv"
@@ -79,9 +80,6 @@ func runServer(neoURL string, port string, cacheDuration string, env string) {
 	// Healthchecks and standards first
 	servicesRouter.HandleFunc("/__health", v1a.Handler("PublicConcordancesRead Healthchecks",
 		"Checks for accessing neo4j", concordances.HealthCheck()))
-	servicesRouter.HandleFunc("/ping", concordances.Ping)
-	servicesRouter.HandleFunc("/__ping", concordances.Ping)
-	servicesRouter.HandleFunc("/__gtg", concordances.GoodToGo)
 
 	// Then API specific ones:
 	servicesRouter.HandleFunc("/concordances", concordances.GetConcordances).Methods("GET")
@@ -95,8 +93,11 @@ func runServer(neoURL string, port string, cacheDuration string, env string) {
 	// The top one of these feels more correct, but the lower one matches what we have in Dropwizard,
 	// so it's what apps expect currently same as ping, the content of build-info needs more definition
 	//using http router here to be able to catch "/"
-	http.HandleFunc("/__build-info", concordances.BuildInfoHandler)
-	http.HandleFunc("/build-info", concordances.BuildInfoHandler)
+	http.HandleFunc(status.PingPath, status.PingHandler)
+	http.HandleFunc(status.PingPathDW, status.PingHandler)
+	http.HandleFunc(status.BuildInfoPath, status.BuildInfoHandler)
+	http.HandleFunc(status.BuildInfoPathDW, status.BuildInfoHandler)
+	http.HandleFunc("/__gtg", concordances.GoodToGo)
 	http.Handle("/", monitoringRouter)
 
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
