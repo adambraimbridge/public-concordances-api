@@ -1,6 +1,6 @@
 FROM alpine:3.3
 ADD *.go /public-concordances-api/
-ADD people/*.go /public-concordances-api/people/
+ADD concordances/*.go /public-concordances-api/concordances/
 RUN apk add --update bash \
   && apk --update add git bzr gcc \
   && apk --update add go \
