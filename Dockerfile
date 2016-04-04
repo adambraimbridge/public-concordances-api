@@ -21,7 +21,7 @@ RUN apk add --update bash \
   && go get ./... \
   && cd $GOPATH/src/${REPO_PATH} \
   && echo ${LDFLAGS} \
-  && go build -ldflags="${LDFLAGS}"
+  && go build -ldflags="${LDFLAGS}" \
   && mv public-concordances-api /app \
   && apk del go git \
   && rm -rf $GOPATH /var/cache/apk/*
