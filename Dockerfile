@@ -1,11 +1,11 @@
 FROM alpine:3.3
-ADD *.go /public-concordances-api/
+ADD *.go .git /public-concordances-api/
 ADD concordances/*.go /public-concordances-api/concordances/
 RUN apk add --update bash \
   && env \
-  && git remote -v
   && apk --update add git bzr gcc \
   && apk --update add go \
+  && git remote -v
   && export GOPATH=/gopath \
   && REPO_PATH="github.com/Financial-Times/public-concordances-api" \
   && mkdir -p $GOPATH/src/${REPO_PATH} \
