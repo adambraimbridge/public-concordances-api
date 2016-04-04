@@ -3,12 +3,12 @@ ADD *.go .git /public-concordances-api/
 ADD concordances/*.go /public-concordances-api/concordances/
 RUN apk add --update bash \
   && env \
-  && apk --update add git bzr gcc \
+  && apk --update add git \
   && apk --update add go \
   && cd public-concordances-api && git remote -v \
   && git rev-parse HEAD \
   && git fetch --tags \
-  && git describe --tag --always \
+  && echo "git describe $(git describe --tag --always)" \
   && cd .. \
   && export GOPATH=/gopath \
   && REPO_PATH="github.com/Financial-Times/public-concordances-api" \
