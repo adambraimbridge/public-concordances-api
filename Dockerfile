@@ -6,11 +6,11 @@ RUN apk add --update bash \
   && cd public-concordances-api \
   && git fetch origin 'refs/tags/*:refs/tags/*' \
   && BUILDINFO_PACKAGE="github.com/Financial-Times/service-status-go/buildinfo." \
-  && VERSION="$(git describe --tag --always 2> /dev/null)" \
+  && VERSION="version=$(git describe --tag --always 2> /dev/null)" \
   && DATETIME="dateTime=$(date -u +%Y%m%d%H%M%S)" \
-  && REPOSITORY="$(git config --get remote.origin.url)" \
-  && REVISION="$(git rev-parse HEAD)" \
-  && BUILDER="$(go version)" \
+  && REPOSITORY="repository=$(git config --get remote.origin.url)" \
+  && REVISION="revision=$(git rev-parse HEAD)" \
+  && BUILDER="builder=$(go version)" \
   && LDFLAGS="-X '"${BUILDINFO_PACKAGE}$VERSION"' -X '"${BUILDINFO_PACKAGE}$DATETIME"' -X '"${BUILDINFO_PACKAGE}$REPOSITORY"' -X '"${BUILDINFO_PACKAGE}$REVISION"' -X '"${BUILDINFO_PACKAGE}$BUILDER"'" \
   && cd .. \
   && export GOPATH=/gopath \
