@@ -5,10 +5,12 @@ RUN apk add --update bash \
   && env \
   && apk --update add git \
   && apk --update add go \
-  && cd public-concordances-api && git remote -v \
+  && cd public-concordances-api \
+  && git remote -v \
   && git rev-parse HEAD \
   && git fetch --tags \
   && echo "git describe $(git describe --tag --always)" \
+  && git config --get remote.origin.url \
   && cd .. \
   && export GOPATH=/gopath \
   && REPO_PATH="github.com/Financial-Times/public-concordances-api" \
