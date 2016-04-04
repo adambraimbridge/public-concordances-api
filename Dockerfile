@@ -5,7 +5,7 @@ RUN apk add --update bash \
   && env \
   && apk --update add git bzr gcc \
   && apk --update add go \
-  && pushd public-concordances-api && git remote -v && popd \
+  && cd public-concordances-api && git remote -v && cd .. \
   && export GOPATH=/gopath \
   && REPO_PATH="github.com/Financial-Times/public-concordances-api" \
   && mkdir -p $GOPATH/src/${REPO_PATH} \
