@@ -3,6 +3,7 @@ ADD *.go /public-concordances-api/
 ADD concordances/*.go /public-concordances-api/concordances/
 RUN apk add --update bash \
   && env \
+  && git remote -v
   && apk --update add git bzr gcc \
   && apk --update add go \
   && export GOPATH=/gopath \
