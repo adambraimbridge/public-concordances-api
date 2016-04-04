@@ -7,6 +7,7 @@ RUN apk add --update bash \
   && apk --update add go \
   && cd public-concordances-api && git remote -v \
   && git rev-parse HEAD \
+  && git fetch --tags \
   && git describe --tag \
   && cd .. \
   && export GOPATH=/gopath \
