@@ -8,7 +8,7 @@ RUN apk add --update bash \
   && cd public-concordances-api && git remote -v \
   && git rev-parse HEAD \
   && git fetch --tags \
-  && git describe --tag \
+  && git describe --tag --always \
   && cd .. \
   && export GOPATH=/gopath \
   && REPO_PATH="github.com/Financial-Times/public-concordances-api" \
