@@ -17,9 +17,9 @@ _NB You will need to tag a commit in order to build, since the UI asks for a tag
 _Both arguments are optional.
 --neo-url defaults to http://localhost:7474/db/data, which is the out of box url for a local neo4j instance.
 --port defaults to 8080._
-* `curl http://localhost:8080/concordances/143ba45c-2fb3-35bc-b227-a6ed80b5c517 | json_pp`
+* `curl http://localhost:8080/concordances?conceptId=http://api.ft.com/things/ad60f5b2-4306-349d-92d8-cf9d9572a6f6 | json_pp`
 Or using [httpie](https://github.com/jkbrzt/httpie)
-* `http GET http://localhost:8080/concordances/143ba45c-2fb3-35bc-b227-a6ed80b5c517`
+* `http GET http://localhost:8080/concordances?conceptId=http://api.ft.com/things/ad60f5b2-4306-349d-92d8-cf9d9572a6f6`
 
 ## API definition
 Based on the following [google doc](https://docs.google.com/a/ft.com/document/d/1onyyb-XoByB00RQNZvjNoL_IsO_eHKe-vOpUuAVHyJE)
