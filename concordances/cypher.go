@@ -72,7 +72,7 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 	query := &neoism.CypherQuery{
 		Statement: `
 		MATCH (p:Concept)<-[:IDENTIFIES]-(i:Identifier)
-		WHERE i.value in {identifierValues} AND i.authority = {authority}
+		WHERE i.value in {identifierValues}
 		RETURN collect({uuid:p.uuid, types:labels(p), Identifier:{authority:i.authority, identifierValue:i.value}}) as rs
 		`,
 		Parameters: neoism.Props{
