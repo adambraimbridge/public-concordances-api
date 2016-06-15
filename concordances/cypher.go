@@ -41,9 +41,14 @@ func (pcw CypherDriver) CheckConnectivity() error {
 }
 
 type neoReadStruct struct {
-	UUID       string     `json:"uuid"`
-	Types      []string   `json:"types"`
-	Identifier Identifier `json:"identifier"`
+	UUID          string        `json:"uuid"`
+	Types         []string      `json:"types"`
+	NeoIdentifier neoIdentifier `json:"neoIdentifier"`
+}
+
+type neoIdentifier struct {
+	Labels []string `json:"labels"`
+	Value  string   `json:"value"`
 }
 
 type neoResultStrunct struct {
@@ -57,7 +62,7 @@ func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Conc
 		Statement: `
 		MATCH (p:Concept)<-[:IDENTIFIES]-(i:Identifier)
 		WHERE p.uuid in {identifiers}
-		RETURN collect({uuid:p.uuid, types:labels(p), Identifier:{authority:i.authority, identifierValue:i.value}}) as rs
+		RETURN collect({uuid:p.uuid, types:labels(p), neoIdentifier:{labels:labels(i), value:i.value}}) as rs
 		`,
 		Parameters: neoism.Props{"identifiers": identifiers},
 		Result:     &results,
@@ -73,7 +78,7 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 		Statement: `
 		MATCH (p:Concept)<-[:IDENTIFIES]-(i:Identifier)
 		WHERE i.value in {identifierValues}
-		RETURN collect({uuid:p.uuid, types:labels(p), Identifier:{authority:i.authority, identifierValue:i.value}}) as rs
+		RETURN collect({uuid:p.uuid, types:labels(p), NeoIdentifier:{Labels:labels(i), Value:i.value}}) as rs
 		`,
 		Parameters: neoism.Props{
 			"identifierValues": identifierValues,
@@ -110,8 +115,34 @@ func neoReadStructToConcordances(neo *[]neoReadStruct, env string) (concordances
 		concept.ID = mapper.IDURL(neoCon.UUID)
 		concept.APIURL = mapper.APIURL(neoCon.UUID, neoCon.Types, env)
 		con.Concept = concept
-		con.Identifier = neoCon.Identifier
+		con.Identifier = Identifier{Authority: mapNeoLabelsToAuthorityValue(neoCon.NeoIdentifier.Labels), IdentifierValue: neoCon.NeoIdentifier.Value}
 		concordances.Concordance[i] = con
 	}
 	return concordances
 }
+
+func mapNeoLabelsToAuthorityValue(labelNames []string) (authority string) {
+	for _, label := range labelNames {
+		switch label {
+		case TME_ID_NODE_LABEL:
+			return TME_AUTHORITY
+		case FS_ID_NODE_LABEL:
+			return FS_AUTHORITY
+		case UP_AUTHORITY:
+			return UP_AUTHORITY
+		case LEI_AUTHORITY:
+			return LEI_AUTHORITY
+		}
+	}
+	return ""
+}
+
+const TME_AUTHORITY = "http://api.ft.com/system/FT-TME"
+const FS_AUTHORITY = "http://api.ft.com/system/FACSET"
+const UP_AUTHORITY = "http://api.ft.com/system/UPP"
+const LEI_AUTHORITY = "http://api.ft.com/system/LEI"
+
+const TME_ID_NODE_LABEL = "TMEIdentifier"
+const FS_ID_NODE_LABEL = "FacsetIdentifier"
+const UP_ID_NODE_LABEL = "UPPIdentifier"
+const LEI_ID_NODE_LABEL = "LegalEntityIdentifier"
