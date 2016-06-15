@@ -128,9 +128,9 @@ func mapNeoLabelsToAuthorityValue(labelNames []string) (authority string) {
 			return TME_AUTHORITY
 		case FS_ID_NODE_LABEL:
 			return FS_AUTHORITY
-		case UP_AUTHORITY:
+		case UP_ID_NODE_LABEL:
 			return UP_AUTHORITY
-		case LEI_AUTHORITY:
+		case LEI_ID_NODE_LABEL:
 			return LEI_AUTHORITY
 		}
 	}
@@ -138,11 +138,11 @@ func mapNeoLabelsToAuthorityValue(labelNames []string) (authority string) {
 }
 
 const TME_AUTHORITY = "http://api.ft.com/system/FT-TME"
-const FS_AUTHORITY = "http://api.ft.com/system/FACSET"
+const FS_AUTHORITY = "http://api.ft.com/system/FACTSET"
 const UP_AUTHORITY = "http://api.ft.com/system/UPP"
 const LEI_AUTHORITY = "http://api.ft.com/system/LEI"
 
 const TME_ID_NODE_LABEL = "TMEIdentifier"
-const FS_ID_NODE_LABEL = "FacsetIdentifier"
+const FS_ID_NODE_LABEL = "FactsetIdentifier"
 const UP_ID_NODE_LABEL = "UPPIdentifier"
 const LEI_ID_NODE_LABEL = "LegalEntityIdentifier"
