@@ -62,7 +62,7 @@ func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Conc
 		Statement: `
 		MATCH (p:Concept)<-[:IDENTIFIES]-(i:Identifier)
 		WHERE p.uuid in {identifiers}
-		RETURN collect({uuid:p.uuid, types:labels(p), neoIdentifier:{labels:labels(i), value:i.value}}) as rs
+		RETURN collect(distinct {uuid:p.uuid, types:labels(p), neoIdentifier:{labels:labels(i), value:i.value}}) as rs
 		`,
 		Parameters: neoism.Props{"identifiers": identifiers},
 		Result:     &results,
@@ -74,12 +74,21 @@ func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Conc
 func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []string) (concordances Concordances, found bool, err error) {
 	concordances = Concordances{}
 	results := []neoResultStrunct{}
-	query := &neoism.CypherQuery{
-		Statement: `
-		MATCH (p:Concept)<-[:IDENTIFIES]-(i:Identifier)
+
+	identifierLabel := mapAuthorityToIdentifierLabel(authority)
+
+	if identifierLabel == "" {
+		return Concordances{}, false, nil
+	}
+
+	readByAuthorityQueryStatement := fmt.Sprintf(`
+		MATCH (p:Concept)<-[:IDENTIFIES]-(i:%s)
 		WHERE i.value in {identifierValues}
 		RETURN collect({uuid:p.uuid, types:labels(p), NeoIdentifier:{Labels:labels(i), Value:i.value}}) as rs
-		`,
+		`, identifierLabel)
+
+	query := &neoism.CypherQuery{
+		Statement: readByAuthorityQueryStatement,
 		Parameters: neoism.Props{
 			"identifierValues": identifierValues,
 			"authority":        authority,
@@ -133,6 +142,20 @@ func mapNeoLabelsToAuthorityValue(labelNames []string) (authority string) {
 		case LEI_ID_NODE_LABEL:
 			return LEI_AUTHORITY
 		}
+	}
+	return ""
+}
+
+func mapAuthorityToIdentifierLabel(authority string) (label string) {
+	switch authority {
+	case TME_AUTHORITY:
+		return TME_ID_NODE_LABEL
+	case FS_AUTHORITY:
+		return FS_ID_NODE_LABEL
+	case UP_AUTHORITY:
+		return UP_ID_NODE_LABEL
+	case LEI_AUTHORITY:
+		return LEI_ID_NODE_LABEL
 	}
 	return ""
 }

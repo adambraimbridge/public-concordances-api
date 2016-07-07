@@ -1,3 +1,4 @@
+*idea
 
 Compiled source #
 ###################
@@ -6,6 +7,6 @@ Compiled source #
 # Logs and databases #
 ######################
 *.log
-public-organisations-api
+public-concordances-api
 
 

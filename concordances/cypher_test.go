@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestNeoReadStructToPersonMandatoryFields checks that madatory fields are set even if they are empty or nil / null
+// TestNeoReadStructToPersonMandatoryFields checks that mandatory fields are set even if they are empty or nil / null
 func TestNeoReadByConceptIDToConcordancesMandatoryFields(t *testing.T) {
 
 	assert := assert.New(t)
@@ -48,11 +48,30 @@ func TestNeoReadByAuthorityToConcordancesMandatoryFields(t *testing.T) {
 	defer deleteAllViaService(assert, peopleRW, organisationRW)
 
 	undertest := NewCypherDriver(db, "prod")
-	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FACTSET-PPL", []string{"DANMUR-1"})
+	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FACTSET", []string{"DANMUR-1"})
 	assert.NoError(err)
 	assert.True(found)
 	assert.NotEmpty(cs.Concordance)
 	fmt.Printf("RESULTS:%s\n", cs)
+}
+
+func TestNeoReadByAuthorityEmptyConcordancesWhenUnsupportedAuthority(t *testing.T) {
+
+	assert := assert.New(t)
+	db := getDatabaseConnection(t, assert)
+	batchRunner := neoutils.NewBatchCypherRunner(neoutils.StringerDb{db}, 1)
+
+	peopleRW, organisationRW := getServices(t, assert, db, &batchRunner)
+	writeJSONToService(peopleRW, "./fixtures/Person-Dan_Murphy-868c3c17-611c-4943-9499-600ccded71f3.json", assert)
+	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
+
+	defer deleteAllViaService(assert, peopleRW, organisationRW)
+
+	undertest := NewCypherDriver(db, "prod")
+	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/UnsupportedAuthority", []string{"DANMUR-1"})
+	assert.NoError(err)
+	assert.False(found)
+	assert.Empty(cs.Concordance)
 }
 
 func getServices(t *testing.T, assert *assert.Assertions, db *neoism.Database, batchRunner *neoutils.CypherRunner) (baseftrwapp.Service, baseftrwapp.Service) {
