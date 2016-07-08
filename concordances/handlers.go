@@ -72,26 +72,39 @@ func GetConcordances(w http.ResponseWriter, r *http.Request) {
 	if conceptIDExist && authorityExist {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(
-			`{"message": "If conceptId is present then authority is not a valid parameter"}`))
+			`{"message": "` + conceptAndAuthorityCannotBeBothPresent + `"}`))
 		return
 	}
 
 	if !conceptIDExist && !authorityExist {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(
-			`{"message": "If conceptId is absent then authority is mandatory"}`))
+			`{"message": "` + authorityIsMandatoryIfConceptIdIsMissing + `"}`))
 		return
 	}
 
 	if len(m["authority"]) > 1 {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(
-			`{"message": "Multiple authorities are not permitted"}`))
+			`{"message": "` + multipleAuthoritiesNotPermitted + `"}`))
+		return
+	}
+
+	if len(m["identifierValue"]) > 1 {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(
+			`{"message": "` + multipleAuthorityValuesNotSupported + `"}`))
+		return
+	}
+
+	if len(m["conceptId"]) > 1 {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(
+			`{"message": "` + multipleConceptIDsNotSupported + `"}`))
 		return
 	}
 
 	concordance, found, err := processParams(conceptIDExist, authorityExist, m)
-
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"message": "` + err.Error() + `"}`))
@@ -100,9 +113,22 @@ func GetConcordances(w http.ResponseWriter, r *http.Request) {
 
 	if !found {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"message":"Concordance not found."}`))
+		w.Write([]byte(`{"message":"` + concordanceNotFound + `"}`))
 		return
 	}
+
+	//check the first element of concordances - to see if it's canonical and a redirect is required
+	if conceptIDExist && len(concordance.Concordance) > 0 {
+		canonicalConceptID := concordance.Concordance[0].Concept.ID
+		conceptUUID := m.Get("conceptId")
+		if !strings.EqualFold(canonicalConceptID, conceptUUID) {
+			redirectURL := strings.Replace(r.RequestURI, conceptUUID, canonicalConceptID, 1)
+			w.Header().Set("Location", redirectURL)
+			w.WriteHeader(http.StatusMovedPermanently)
+			return
+		}
+	}
+
 	Jason, _ := json.Marshal(concordance)
 	log.Debugf("Concordance(uuid:%s): %s\n", Jason)
 	w.Header().Set("Cache-Control", CacheControlHeader)
@@ -112,21 +138,26 @@ func GetConcordances(w http.ResponseWriter, r *http.Request) {
 
 func processParams(conceptIDExist bool, authorityExist bool, m url.Values) (concordances Concordances, found bool, err error) {
 	if conceptIDExist {
-		conceptUuids := []string{}
-
-		for _, uri := range m["conceptId"] {
-			conceptUuids = append(conceptUuids, strings.TrimPrefix(uri, thingURIPrefix))
-		}
-		return ConcordanceDriver.ReadByConceptID(conceptUuids)
+		conceptUUID := strings.TrimPrefix(m.Get("conceptId"), thingURIPrefix)
+		return ConcordanceDriver.ReadByConceptID(conceptUUID)
 	}
 
 	if authorityExist {
-		return ConcordanceDriver.ReadByAuthority(m.Get("authority"), m["identifierValue"])
+		identifierValue := m.Get("identifierValue")
+		return ConcordanceDriver.ReadByAuthority(m.Get("authority"), identifierValue)
 	}
 
-	return Concordances{}, false, errors.New("Niether conceptId nor authority were present")
+	return Concordances{}, false, errors.New(neitherConceptIdNorAuthorityPresent)
 }
 
 const (
 	thingURIPrefix = "http://api.ft.com/things/"
+
+	multipleAuthoritiesNotPermitted          = "Multiple authorities are not permitted"
+	multipleAuthorityValuesNotSupported      = "Multiple authority values (identifiers) are not supported"
+	multipleConceptIDsNotSupported           = "Multiple conceptIDs are not supported"
+	conceptAndAuthorityCannotBeBothPresent   = "If conceptId is present then authority is not a valid parameter"
+	authorityIsMandatoryIfConceptIdIsMissing = "If conceptId is absent then authority is mandatory"
+	neitherConceptIdNorAuthorityPresent      = "Neither conceptId nor authority were present"
+	concordanceNotFound                      = "Concordance not found."
 )
