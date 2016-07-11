@@ -120,9 +120,9 @@ func GetConcordances(w http.ResponseWriter, r *http.Request) {
 	//check the first element of concordances - to see if it's canonical and a redirect is required
 	if conceptIDExist && len(concordance.Concordance) > 0 {
 		canonicalConceptID := concordance.Concordance[0].Concept.ID
-		conceptUUID := m.Get("conceptId")
-		if !strings.EqualFold(canonicalConceptID, conceptUUID) {
-			redirectURL := strings.Replace(r.RequestURI, conceptUUID, canonicalConceptID, 1)
+		conceptID := m.Get("conceptId")
+		if !strings.EqualFold(canonicalConceptID, conceptID) {
+			redirectURL := strings.Replace(r.RequestURI, conceptID, canonicalConceptID, 1)
 			w.Header().Set("Location", redirectURL)
 			w.WriteHeader(http.StatusMovedPermanently)
 			return
