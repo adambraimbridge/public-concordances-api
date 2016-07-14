@@ -52,7 +52,44 @@ func TestNeoReadByAuthorityToConcordancesMandatoryFields(t *testing.T) {
 	assert.NoError(err)
 	assert.True(found)
 	assert.NotEmpty(cs.Concordance)
-	fmt.Printf("RESULTS:%s\n", cs)
+}
+
+func TestNeoReadByAuthorityOnlyOneConcordancePerIdentifierValue(t *testing.T) {
+
+	assert := assert.New(t)
+	db := getDatabaseConnection(t, assert)
+	batchRunner := neoutils.NewBatchCypherRunner(neoutils.StringerDb{db}, 1)
+
+	peopleRW, organisationRW := getServices(t, assert, db, &batchRunner)
+	writeJSONToService(peopleRW, "./fixtures/Person-Berni_Varga-ea56ae1d-5241-413d-827d-11aa90f983f8.json", assert)
+
+	defer deleteAllViaService(assert, peopleRW, organisationRW)
+
+	undertest := NewCypherDriver(db, "prod")
+	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FT-TME", []string{"jhdgfjhdagfjd00YTc2LWFkNDgtMGFiZjE4NGEzYTYy-T04"})
+	assert.NoError(err)
+	assert.True(found)
+	assert.NotEmpty(cs.Concordance)
+	assert.Equal(len(cs.Concordance), 1)
+}
+
+func TestNeoReadByConceptIdReturnMultipleConcordancesForMultipleIdentifiers(t *testing.T) {
+
+	assert := assert.New(t)
+	db := getDatabaseConnection(t, assert)
+	batchRunner := neoutils.NewBatchCypherRunner(neoutils.StringerDb{db}, 1)
+
+	peopleRW, organisationRW := getServices(t, assert, db, &batchRunner)
+	writeJSONToService(peopleRW, "./fixtures/Person-Berni_Varga-ea56ae1d-5241-413d-827d-11aa90f983f8.json", assert)
+
+	defer deleteAllViaService(assert, peopleRW, organisationRW)
+
+	undertest := NewCypherDriver(db, "prod")
+	cs, found, err := undertest.ReadByConceptID([]string{"ea56ae1d-5241-413d-827d-11aa90f983f8"})
+	assert.NoError(err)
+	assert.True(found)
+	assert.NotEmpty(cs.Concordance)
+	assert.Equal(len(cs.Concordance), 4)
 }
 
 func TestNeoReadByAuthorityEmptyConcordancesWhenUnsupportedAuthority(t *testing.T) {

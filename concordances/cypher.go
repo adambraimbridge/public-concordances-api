@@ -85,8 +85,7 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 	readByAuthorityQueryStatement := fmt.Sprintf(`
 		MATCH (p:Concept)<-[:IDENTIFIES]-(i:%s)
 		WHERE i.value in {identifierValues}
-		MATCH (p:Concept)<-[:IDENTIFIES]-(ids:Identifier)
-		RETURN collect({uuid:p.uuid, types:labels(p), neoIdentifier:{labels:labels(ids), value:ids.value}}) as rs
+		RETURN collect({uuid:p.uuid, types:labels(p), neoIdentifier:{labels:labels(i), value:i.value}}) as rs
 		`, identifierLabel)
 
 	query := &neoism.CypherQuery{
