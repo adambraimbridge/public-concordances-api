@@ -10,8 +10,8 @@ import (
 
 // Driver interface
 type Driver interface {
-	ReadByConceptID(id string) (concordances Concordances, found bool, err error)
-	ReadByAuthority(authority string, id string) (concordances Concordances, found bool, err error)
+	ReadByConceptID(ids []string) (concordances Concordances, found bool, err error)
+	ReadByAuthority(authority string, ids []string) (concordances Concordances, found bool, err error)
 	CheckConnectivity() error
 }
 
@@ -55,23 +55,24 @@ type neoResultStrunct struct {
 	Rs []neoReadStruct
 }
 
-func (pcw CypherDriver) ReadByConceptID(identifier string) (concordances Concordances, found bool, err error) {
+func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Concordances, found bool, err error) {
 	concordances = Concordances{}
 	results := []neoResultStrunct{}
 	query := &neoism.CypherQuery{
 		Statement: `
-		MATCH (p:Concept)<-[:IDENTIFIES]-(i:UPPIdentifier{value:{identifier}})
+		MATCH (p:Concept)<-[:IDENTIFIES]-(i:UPPIdentifier)
+		WHERE i.value in {identifiers}
 		MATCH (p:Concept)<-[:IDENTIFIES]-(ids:Identifier)
 		RETURN collect({uuid:p.uuid, types:labels(p), neoIdentifier:{labels:labels(ids), value:ids.value}}) as rs
 		`,
-		Parameters: neoism.Props{"identifier": identifier},
+		Parameters: neoism.Props{"identifiers": identifiers},
 		Result:     &results,
 	}
 
 	return processCypherQueryToConcordances(pcw, query, &results)
 }
 
-func (pcw CypherDriver) ReadByAuthority(authority string, identifierValue string) (concordances Concordances, found bool, err error) {
+func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []string) (concordances Concordances, found bool, err error) {
 	concordances = Concordances{}
 	results := []neoResultStrunct{}
 
@@ -82,7 +83,8 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValue string
 	}
 
 	readByAuthorityQueryStatement := fmt.Sprintf(`
-		MATCH (p:Concept)<-[:IDENTIFIES]-(i:%s{value:{identifierValue}})
+		MATCH (p:Concept)<-[:IDENTIFIES]-(i:%s)
+		WHERE i.value in {identifierValues}
 		MATCH (p:Concept)<-[:IDENTIFIES]-(ids:Identifier)
 		RETURN collect({uuid:p.uuid, types:labels(p), neoIdentifier:{labels:labels(ids), value:ids.value}}) as rs
 		`, identifierLabel)
@@ -90,8 +92,8 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValue string
 	query := &neoism.CypherQuery{
 		Statement: readByAuthorityQueryStatement,
 		Parameters: neoism.Props{
-			"identifierValue": identifierValue,
-			"authority":       authority,
+			"identifierValues": identifierValues,
+			"authority":        authority,
 		},
 		Result: &results,
 	}

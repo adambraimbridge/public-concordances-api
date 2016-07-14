@@ -14,19 +14,19 @@ var (
 	server          *httptest.Server
 	concordanceURL  string
 	isFound         bool
-	conceptId       string
-	authorityValue  string
+	conceptIds      []string
+	authorityValues []string
 	actualAuthority string
 )
 
 type mockConcordanceDriver struct{}
 
-func (driver mockConcordanceDriver) ReadByConceptID(id string) (concordances Concordances, found bool, err error) {
-	conceptId = id
-	return Concordances{[]Concordance{Concordance{Concept: Concept{ID: conceptId}}}}, isFound, nil
+func (driver mockConcordanceDriver) ReadByConceptID(ids []string) (concordances Concordances, found bool, err error) {
+	conceptIds = ids
+	return Concordances{}, isFound, nil
 }
-func (driver mockConcordanceDriver) ReadByAuthority(authority string, id string) (concordances Concordances, found bool, err error) {
-	authorityValue = id
+func (driver mockConcordanceDriver) ReadByAuthority(authority string, ids []string) (concordances Concordances, found bool, err error) {
+	authorityValues = ids
 	actualAuthority = authority
 	return Concordances{}, isFound, nil
 }
@@ -52,20 +52,20 @@ func TestCanGetOneAuthority(t *testing.T) {
 	assert.NoError(err)
 	assert.EqualValues(200, res.StatusCode)
 	assert.EqualValues(actualAuthority, "some-authority")
-	assert.Equal("some-value", authorityValue)
+	assert.Len(authorityValues, 1)
+	assert.Contains(authorityValues, "some-value")
 }
 
-func TestCanNotGetMultipleIdentifiersByAuthority(t *testing.T) {
+func TestCanGetMultipleIdentifiersByAuthority(t *testing.T) {
 	assert := assert.New(t)
 	isFound = true
 	req, _ := http.NewRequest("GET", concordanceURL+"?authority=some-authority&identifierValue=some-value&identifierValue=some-value2", nil)
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
-
-	assert.EqualValues(400, res.StatusCode)
-	msg, err := ioutil.ReadAll(res.Body)
-	assert.NoError(err)
-	assert.Contains(string(msg), multipleAuthorityValuesNotSupported)
+	assert.EqualValues(200, res.StatusCode)
+	assert.Len(authorityValues, 2)
+	assert.Contains(authorityValues, "some-value")
+	assert.Contains(authorityValues, "some-value2")
 }
 
 func TestReturnBadRequestGivenMoreThanOneAuthority(t *testing.T) {
@@ -87,19 +87,20 @@ func TestCanGetOneConcept(t *testing.T) {
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
 	assert.EqualValues(200, res.StatusCode)
-	assert.Equal("bob", conceptId)
+	assert.Len(conceptIds, 1)
+	assert.Contains(conceptIds, "bob")
 }
 
-func TestCanNotGetMultipleConcepts(t *testing.T) {
+func TestCanGetMultipleConcepts(t *testing.T) {
 	assert := assert.New(t)
 	isFound = true
 	req, _ := http.NewRequest("GET", concordanceURL+"?conceptId=bob&conceptId=carlos", nil)
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
-	assert.EqualValues(400, res.StatusCode)
-	msg, err := ioutil.ReadAll(res.Body)
-	assert.NoError(err)
-	assert.Contains(string(msg), multipleConceptIDsNotSupported)
+	assert.EqualValues(200, res.StatusCode)
+	assert.Len(conceptIds, 2)
+	assert.Contains(conceptIds, "bob")
+	assert.Contains(conceptIds, "carlos")
 }
 
 func TestCanParseConceptURI(t *testing.T) {
@@ -109,7 +110,8 @@ func TestCanParseConceptURI(t *testing.T) {
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
 	assert.EqualValues(200, res.StatusCode)
-	assert.Equal("8138ca3f-b80d-3ef8-ad59-6a9b6ea5f15e", conceptId)
+	assert.Len(conceptIds, 1)
+	assert.Contains(conceptIds, "8138ca3f-b80d-3ef8-ad59-6a9b6ea5f15e")
 }
 
 func TestCanNotRequestAuthorityAndConceptId(t *testing.T) {

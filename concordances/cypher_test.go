@@ -28,7 +28,7 @@ func TestNeoReadByConceptIDToConcordancesMandatoryFields(t *testing.T) {
 	defer deleteAllViaService(assert, peopleRW, organisationRW)
 
 	undertest := NewCypherDriver(db, "prod")
-	cs, found, err := undertest.ReadByConceptID("868c3c17-611c-4943-9499-600ccded71f3")
+	cs, found, err := undertest.ReadByConceptID([]string{"868c3c17-611c-4943-9499-600ccded71f3"})
 	assert.NoError(err)
 	assert.True(found)
 	assert.NotEmpty(cs.Concordance)
@@ -48,7 +48,7 @@ func TestNeoReadByAuthorityToConcordancesMandatoryFields(t *testing.T) {
 	defer deleteAllViaService(assert, peopleRW, organisationRW)
 
 	undertest := NewCypherDriver(db, "prod")
-	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FACTSET", "DANMUR-1")
+	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FACTSET", []string{"DANMUR-1"})
 	assert.NoError(err)
 	assert.True(found)
 	assert.NotEmpty(cs.Concordance)
@@ -68,7 +68,7 @@ func TestNeoReadByAuthorityEmptyConcordancesWhenUnsupportedAuthority(t *testing.
 	defer deleteAllViaService(assert, peopleRW, organisationRW)
 
 	undertest := NewCypherDriver(db, "prod")
-	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/UnsupportedAuthority", "DANMUR-1")
+	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/UnsupportedAuthority", []string{"DANMUR-1"})
 	assert.NoError(err)
 	assert.False(found)
 	assert.Empty(cs.Concordance)
