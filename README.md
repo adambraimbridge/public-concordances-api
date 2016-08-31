@@ -69,4 +69,4 @@ The service will respond with Error HTTP codes if both a conceptId and authority
 The service will never respond with Error HTTP status codes if none of the conceptId's or identifierValues are present in concordance,
 instead it will return an empty array of Concepts or Identifiers.
 
-Sourcecode is [here] (http://git.svc.ft.com/projects/CP/repos/public-concordances-api/browse)
+Sourcecode is [here] (https://github.com/Financial-Times/public-concordances-api)
