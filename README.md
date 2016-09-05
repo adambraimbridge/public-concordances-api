@@ -54,7 +54,6 @@ Based on the following [google doc](https://docs.google.com/a/ft.com/document/d/
     - `GET /concordances?authority={identifierUri}&identifierValue{identifierValue}` - Returns the apiUrl that matches the corresponding identifier 
     - `GET /concordances?authority={identifierUri}&idenifierValue={identifierValue}&idenifierValue={identifierValue}...` -Returns a list of all apiUrl's for the corresponding identifiers
 
-Further in-depth API doc can be found here https://docs.google.com/document/d/1onyyb-XoByB00RQNZvjNoL_IsO_eHKe-vOpUuAVHyJE/edit#heading=h.6lmdhugiunll
 ## Admin endpoints (CoCo) 
 
   - `https://{host}/__public-concordances-api/__health`
@@ -72,3 +71,5 @@ The service will never respond with Error HTTP status codes if none of the conce
 instead it will return an empty array of Concepts or Identifiers.
 
 Sourcecode is [here] (https://github.com/Financial-Times/public-concordances-api)
+Run Book is [here] (https://sites.google.com/a/ft.com/ft-technology-service-transition/home/run-book-library/public-concordances-api)
+
