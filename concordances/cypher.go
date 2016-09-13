@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
+	"github.com/Financial-Times/neo-utils-go/neoutils"
 	log "github.com/Sirupsen/logrus"
 	"github.com/jmcvetta/neoism"
 )
@@ -17,27 +18,18 @@ type Driver interface {
 
 // CypherDriver struct
 type CypherDriver struct {
-	db  *neoism.Database
-	env string
+	conn neoutils.NeoConnection
+	env  string
 }
 
 //NewCypherDriver instantiate driver
-func NewCypherDriver(db *neoism.Database, env string) CypherDriver {
-	return CypherDriver{db, env}
+func NewCypherDriver(conn neoutils.NeoConnection, env string) CypherDriver {
+	return CypherDriver{conn, env}
 }
 
 // CheckConnectivity tests neo4j by running a simple cypher query
 func (pcw CypherDriver) CheckConnectivity() error {
-	results := []struct {
-		ID int
-	}{}
-	query := &neoism.CypherQuery{
-		Statement: "MATCH (x) RETURN ID(x) LIMIT 1",
-		Result:    &results,
-	}
-	err := pcw.db.Cypher(query)
-	log.Debugf("CheckConnectivity results:%+v  err: %+v", results, err)
-	return err
+	return neoutils.Check(pcw.conn)
 }
 
 type neoReadStruct struct {
@@ -99,7 +91,7 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValue string
 }
 
 func processCypherQueryToConcordances(pcw CypherDriver, q *neoism.CypherQuery, results *[]neoResultStrunct) (concordances Concordances, found bool, err error) {
-	err = pcw.db.Cypher(q)
+	err = pcw.conn.CypherBatch([]*neoism.CypherQuery{q})
 	if err != nil {
 		log.Errorf("Error looking up Concordances with query %s from neoism: %+v\n", q.Statement, err)
 		return Concordances{}, false, fmt.Errorf("Error accessing Concordance datastore for identifier:")
