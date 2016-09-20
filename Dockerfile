@@ -1,6 +1,6 @@
 FROM alpine:3.4
 
-ENV SOURCE_DIR /public-concordanes-api-src
+ENV SOURCE_DIR /public-concordances-api-src
 
 ADD *.go .git $SOURCE_DIR/
 
