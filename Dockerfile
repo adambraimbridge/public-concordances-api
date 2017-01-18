@@ -1,9 +1,14 @@
-FROM alpine:3.3
-ADD *.go .git /public-concordances-api/
-ADD concordances/*.go /public-concordances-api/concordances/
+FROM alpine:3.4
+
+ENV SOURCE_DIR /public-concordances-api-src
+
+ADD *.go .git $SOURCE_DIR/
+
+ADD concordances/*.go $SOURCE_DIR/concordances/
+
 RUN apk add --update bash \
   && apk --update add git go \
-  && cd public-concordances-api \
+  && cd $SOURCE_DIR \
   && git fetch origin 'refs/tags/*:refs/tags/*' \
   && BUILDINFO_PACKAGE="github.com/Financial-Times/service-status-go/buildinfo." \
   && VERSION="version=$(git describe --tag --always 2> /dev/null)" \
@@ -16,13 +21,13 @@ RUN apk add --update bash \
   && export GOPATH=/gopath \
   && REPO_PATH="github.com/Financial-Times/public-concordances-api" \
   && mkdir -p $GOPATH/src/${REPO_PATH} \
-  && cp -r public-concordances-api/* $GOPATH/src/${REPO_PATH} \
+  && cp -r $SOURCE_DIR/* $GOPATH/src/${REPO_PATH} \
   && cd $GOPATH/src/${REPO_PATH} \
   && go get ./... \
   && cd $GOPATH/src/${REPO_PATH} \
   && echo ${LDFLAGS} \
   && go build -ldflags="${LDFLAGS}" \
-  && mv public-concordances-api /app \
+  && mv public-concordances-api / \
   && apk del go git \
   && rm -rf $GOPATH /var/cache/apk/*
-CMD exec /app --neo-url=$NEO_URL --port=$APP_PORT --graphiteTCPAddress=$GRAPHITE_ADDRESS --graphitePrefix=$GRAPHITE_PREFIX --logMetrics=$LOG_METRICS --cache-duration=$CACHE_DURATION
+CMD [ "/public-concordances-api" ]

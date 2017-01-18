@@ -19,9 +19,8 @@ func TestNeoReadByConceptIDToConcordancesMandatoryFields(t *testing.T) {
 
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
-	batchRunner := neoutils.NewBatchCypherRunner(neoutils.StringerDb{db}, 1)
 
-	peopleRW, organisationRW := getServices(t, assert, db, &batchRunner)
+	peopleRW, organisationRW := getServices(t, assert, db)
 	writeJSONToService(peopleRW, "./fixtures/Person-Dan_Murphy-868c3c17-611c-4943-9499-600ccded71f3.json", assert)
 	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
 
@@ -32,16 +31,15 @@ func TestNeoReadByConceptIDToConcordancesMandatoryFields(t *testing.T) {
 	assert.NoError(err)
 	assert.True(found)
 	assert.NotEmpty(cs.Concordance)
-	fmt.Printf("RESULTS:%s\n", cs)
+	cleanUpParentOrgAndUppIdentifier(db, t, assert)
 }
 
 func TestNeoReadByAuthorityToConcordancesMandatoryFields(t *testing.T) {
 
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
-	batchRunner := neoutils.NewBatchCypherRunner(neoutils.StringerDb{db}, 1)
 
-	peopleRW, organisationRW := getServices(t, assert, db, &batchRunner)
+	peopleRW, organisationRW := getServices(t, assert, db)
 	writeJSONToService(peopleRW, "./fixtures/Person-Dan_Murphy-868c3c17-611c-4943-9499-600ccded71f3.json", assert)
 	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
 
@@ -52,15 +50,15 @@ func TestNeoReadByAuthorityToConcordancesMandatoryFields(t *testing.T) {
 	assert.NoError(err)
 	assert.True(found)
 	assert.NotEmpty(cs.Concordance)
+
 }
 
 func TestNeoReadByAuthorityOnlyOneConcordancePerIdentifierValue(t *testing.T) {
 
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
-	batchRunner := neoutils.NewBatchCypherRunner(neoutils.StringerDb{db}, 1)
 
-	peopleRW, organisationRW := getServices(t, assert, db, &batchRunner)
+	peopleRW, organisationRW := getServices(t, assert, db)
 	writeJSONToService(peopleRW, "./fixtures/Person-Berni_Varga-ea56ae1d-5241-413d-827d-11aa90f983f8.json", assert)
 
 	defer deleteAllViaService(assert, peopleRW, organisationRW)
@@ -77,9 +75,8 @@ func TestNeoReadByConceptIdReturnMultipleConcordancesForMultipleIdentifiers(t *t
 
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
-	batchRunner := neoutils.NewBatchCypherRunner(neoutils.StringerDb{db}, 1)
 
-	peopleRW, organisationRW := getServices(t, assert, db, &batchRunner)
+	peopleRW, organisationRW := getServices(t, assert, db)
 	writeJSONToService(peopleRW, "./fixtures/Person-Berni_Varga-ea56ae1d-5241-413d-827d-11aa90f983f8.json", assert)
 
 	defer deleteAllViaService(assert, peopleRW, organisationRW)
@@ -90,15 +87,15 @@ func TestNeoReadByConceptIdReturnMultipleConcordancesForMultipleIdentifiers(t *t
 	assert.True(found)
 	assert.NotEmpty(cs.Concordance)
 	assert.Equal(len(cs.Concordance), 4)
+
 }
 
 func TestNeoReadByAuthorityEmptyConcordancesWhenUnsupportedAuthority(t *testing.T) {
 
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
-	batchRunner := neoutils.NewBatchCypherRunner(neoutils.StringerDb{db}, 1)
 
-	peopleRW, organisationRW := getServices(t, assert, db, &batchRunner)
+	peopleRW, organisationRW := getServices(t, assert, db)
 	writeJSONToService(peopleRW, "./fixtures/Person-Dan_Murphy-868c3c17-611c-4943-9499-600ccded71f3.json", assert)
 	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
 
@@ -109,23 +106,26 @@ func TestNeoReadByAuthorityEmptyConcordancesWhenUnsupportedAuthority(t *testing.
 	assert.NoError(err)
 	assert.False(found)
 	assert.Empty(cs.Concordance)
+	cleanUpParentOrgAndUppIdentifier(db, t, assert)
 }
 
-func getServices(t *testing.T, assert *assert.Assertions, db *neoism.Database, batchRunner *neoutils.CypherRunner) (baseftrwapp.Service, baseftrwapp.Service) {
-	peopleRW := people.NewCypherPeopleService(*batchRunner, db)
+func getServices(t *testing.T, assert *assert.Assertions, db neoutils.NeoConnection) (baseftrwapp.Service, baseftrwapp.Service) {
+	peopleRW := people.NewCypherPeopleService(db)
 	assert.NoError(peopleRW.Initialise())
-	organisationRW := organisations.NewCypherOrganisationService(*batchRunner, db)
+	organisationRW := organisations.NewCypherOrganisationService(db)
 	assert.NoError(organisationRW.Initialise())
 	return peopleRW, organisationRW
 }
 
-func getDatabaseConnection(t *testing.T, assert *assert.Assertions) *neoism.Database {
+func getDatabaseConnection(t *testing.T, assert *assert.Assertions) neoutils.NeoConnection {
 	url := os.Getenv("NEO4J_TEST_URL")
 	if url == "" {
 		url = "http://localhost:7474/db/data"
 	}
 
-	db, err := neoism.Connect(url)
+	conf := neoutils.DefaultConnectionConfig()
+	conf.Transactional = false
+	db, err := neoutils.Connect(url, conf)
 	assert.NoError(err, "Failed to connect to Neo4j")
 	return db
 }
@@ -143,4 +143,20 @@ func writeJSONToService(service baseftrwapp.Service, pathToJSONFile string, asse
 func deleteAllViaService(assert *assert.Assertions, peopleRW baseftrwapp.Service, organisationRW baseftrwapp.Service) {
 	peopleRW.Delete("868c3c17-611c-4943-9499-600ccded71f3")
 	organisationRW.Delete("f21a5cc0-d326-4e62-b84a-d840c2209fee")
+}
+
+func cleanUpParentOrgAndUppIdentifier(db neoutils.NeoConnection, t *testing.T, assert *assert.Assertions) {
+	qs := []*neoism.CypherQuery{
+		{
+			//deletes parent 'org' which only has type Thing
+			Statement: fmt.Sprintf("MATCH (j:Thing {uuid: '%v'}) DETACH DELETE j", "3e844449-b27f-40d4-b696-2ce9b6137133"),
+		},
+		{
+			//deletes upp identifier for the above parent 'org'
+			Statement: fmt.Sprintf("MATCH (k:Identifier {value: '%v'}) DETACH DELETE k", "3e844449-b27f-40d4-b696-2ce9b6137133"),
+		},
+	}
+
+	err := db.CypherBatch(qs)
+	assert.NoError(err)
 }
