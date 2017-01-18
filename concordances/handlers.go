@@ -90,43 +90,11 @@ func GetConcordances(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(m["identifierValue"]) > 1 {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(
-			`{"message": "` + multipleAuthorityValuesNotSupported + `"}`))
-		return
-	}
-
-	if len(m["conceptId"]) > 1 {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(
-			`{"message": "` + multipleConceptIDsNotSupported + `"}`))
-		return
-	}
-
-	concordance, found, err := processParams(conceptIDExist, authorityExist, m)
+	concordance, _, err := processParams(conceptIDExist, authorityExist, m)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"message": "` + err.Error() + `"}`))
 		return
-	}
-
-	if !found {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"message":"` + concordanceNotFound + `"}`))
-		return
-	}
-
-	//check the first element of concordances - to see if it's canonical and a redirect is required
-	if conceptIDExist && len(concordance.Concordance) > 0 {
-		canonicalConceptID := concordance.Concordance[0].Concept.ID
-		conceptID := m.Get("conceptId")
-		if !strings.EqualFold(canonicalConceptID, conceptID) {
-			redirectURL := strings.Replace(r.RequestURI, conceptID, canonicalConceptID, 1)
-			w.Header().Set("Location", redirectURL)
-			w.WriteHeader(http.StatusMovedPermanently)
-			return
-		}
 	}
 
 	Jason, _ := json.Marshal(concordance)
@@ -138,13 +106,17 @@ func GetConcordances(w http.ResponseWriter, r *http.Request) {
 
 func processParams(conceptIDExist bool, authorityExist bool, m url.Values) (concordances Concordances, found bool, err error) {
 	if conceptIDExist {
-		conceptUUID := strings.TrimPrefix(m.Get("conceptId"), thingURIPrefix)
-		return ConcordanceDriver.ReadByConceptID(conceptUUID)
+		conceptUuids := []string{}
+
+		for _, uri := range m["conceptId"] {
+			conceptUuids = append(conceptUuids, strings.TrimPrefix(uri, thingURIPrefix))
+		}
+
+		return ConcordanceDriver.ReadByConceptID(conceptUuids)
 	}
 
 	if authorityExist {
-		identifierValue := m.Get("identifierValue")
-		return ConcordanceDriver.ReadByAuthority(m.Get("authority"), identifierValue)
+		return ConcordanceDriver.ReadByAuthority(m.Get("authority"), m["identifierValue"])
 	}
 
 	return Concordances{}, false, errors.New(neitherConceptIdNorAuthorityPresent)
@@ -154,8 +126,6 @@ const (
 	thingURIPrefix = "http://api.ft.com/things/"
 
 	multipleAuthoritiesNotPermitted          = "Multiple authorities are not permitted"
-	multipleAuthorityValuesNotSupported      = "Multiple authority values (identifiers) are not supported"
-	multipleConceptIDsNotSupported           = "Multiple conceptIDs are not supported"
 	conceptAndAuthorityCannotBeBothPresent   = "If conceptId is present then authority is not a valid parameter"
 	authorityIsMandatoryIfConceptIdIsMissing = "If conceptId is absent then authority is mandatory"
 	neitherConceptIdNorAuthorityPresent      = "Neither conceptId nor authority were present"

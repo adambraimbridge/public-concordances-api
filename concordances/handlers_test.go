@@ -1,7 +1,6 @@
 package concordances
 
 import (
-	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
@@ -15,28 +14,19 @@ var (
 	server          *httptest.Server
 	concordanceURL  string
 	isFound         bool
-	conceptId       string
-	authorityValue  string
+	conceptIds      []string
+	authorityValues []string
 	actualAuthority string
-	isCanonical     bool
-)
-
-const (
-	alternativeId = "alternativeId"
 )
 
 type mockConcordanceDriver struct{}
 
-func (driver mockConcordanceDriver) ReadByConceptID(id string) (concordances Concordances, found bool, err error) {
-	if isCanonical {
-		conceptId = id
-	} else {
-		conceptId = alternativeId
-	}
-	return Concordances{[]Concordance{Concordance{Concept: Concept{ID: conceptId}}}}, isFound, nil
+func (driver mockConcordanceDriver) ReadByConceptID(ids []string) (concordances Concordances, found bool, err error) {
+	conceptIds = ids
+	return Concordances{}, isFound, nil
 }
-func (driver mockConcordanceDriver) ReadByAuthority(authority string, id string) (concordances Concordances, found bool, err error) {
-	authorityValue = id
+func (driver mockConcordanceDriver) ReadByAuthority(authority string, ids []string) (concordances Concordances, found bool, err error) {
+	authorityValues = ids
 	actualAuthority = authority
 	return Concordances{}, isFound, nil
 }
@@ -52,39 +42,35 @@ func init() {
 	server = httptest.NewServer(r)
 	concordanceURL = fmt.Sprintf("%s/concordances", server.URL) //Grab the address for the API endpoint
 	isFound = true
-	isCanonical = true
 }
 
 func TestCanGetOneAuthority(t *testing.T) {
 	assert := assert.New(t)
 	isFound = true
-	isCanonical = true
 	req, _ := http.NewRequest("GET", concordanceURL+"?authority=some-authority&identifierValue=some-value", nil)
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
 	assert.EqualValues(200, res.StatusCode)
 	assert.EqualValues(actualAuthority, "some-authority")
-	assert.Equal("some-value", authorityValue)
+	assert.Len(authorityValues, 1)
+	assert.Contains(authorityValues, "some-value")
 }
 
-func TestCanNotGetMultipleIdentifiersByAuthority(t *testing.T) {
+func TestCanGetMultipleIdentifiersByAuthority(t *testing.T) {
 	assert := assert.New(t)
 	isFound = true
-	isCanonical = true
 	req, _ := http.NewRequest("GET", concordanceURL+"?authority=some-authority&identifierValue=some-value&identifierValue=some-value2", nil)
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
-
-	assert.EqualValues(400, res.StatusCode)
-	msg, err := ioutil.ReadAll(res.Body)
-	assert.NoError(err)
-	assert.Contains(string(msg), multipleAuthorityValuesNotSupported)
+	assert.EqualValues(200, res.StatusCode)
+	assert.Len(authorityValues, 2)
+	assert.Contains(authorityValues, "some-value")
+	assert.Contains(authorityValues, "some-value2")
 }
 
 func TestReturnBadRequestGivenMoreThanOneAuthority(t *testing.T) {
 	assert := assert.New(t)
 	isFound = true
-	isCanonical = true
 	req, _ := http.NewRequest("GET", concordanceURL+"?authority=some-authority&identifierValue=some-value&authority=some-authority-yet-again", nil)
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
@@ -97,42 +83,40 @@ func TestReturnBadRequestGivenMoreThanOneAuthority(t *testing.T) {
 func TestCanGetOneConcept(t *testing.T) {
 	assert := assert.New(t)
 	isFound = true
-	isCanonical = true
 	req, _ := http.NewRequest("GET", concordanceURL+"?conceptId=bob", nil)
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
 	assert.EqualValues(200, res.StatusCode)
-	assert.Equal("bob", conceptId)
+	assert.Len(conceptIds, 1)
+	assert.Contains(conceptIds, "bob")
 }
 
-func TestCanNotGetMultipleConcepts(t *testing.T) {
+func TestCanGetMultipleConcepts(t *testing.T) {
 	assert := assert.New(t)
 	isFound = true
-	isCanonical = true
 	req, _ := http.NewRequest("GET", concordanceURL+"?conceptId=bob&conceptId=carlos", nil)
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
-	assert.EqualValues(400, res.StatusCode)
-	msg, err := ioutil.ReadAll(res.Body)
-	assert.NoError(err)
-	assert.Contains(string(msg), multipleConceptIDsNotSupported)
+	assert.EqualValues(200, res.StatusCode)
+	assert.Len(conceptIds, 2)
+	assert.Contains(conceptIds, "bob")
+	assert.Contains(conceptIds, "carlos")
 }
 
 func TestCanParseConceptURI(t *testing.T) {
 	assert := assert.New(t)
 	isFound = true
-	isCanonical = true
 	req, _ := http.NewRequest("GET", concordanceURL+"?conceptId=http://api.ft.com/things/8138ca3f-b80d-3ef8-ad59-6a9b6ea5f15e", nil)
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
 	assert.EqualValues(200, res.StatusCode)
-	assert.Equal("8138ca3f-b80d-3ef8-ad59-6a9b6ea5f15e", conceptId)
+	assert.Len(conceptIds, 1)
+	assert.Contains(conceptIds, "8138ca3f-b80d-3ef8-ad59-6a9b6ea5f15e")
 }
 
 func TestCanNotRequestAuthorityAndConceptId(t *testing.T) {
 	assert := assert.New(t)
 	isFound = true
-	isCanonical = true
 	req, _ := http.NewRequest("GET", concordanceURL+"?conceptId=bob&authority=high-and-mighty", nil)
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
@@ -142,29 +126,8 @@ func TestCanNotRequestAuthorityAndConceptId(t *testing.T) {
 func TestCanNotRequestWithoutAuthorityOrConceptId(t *testing.T) {
 	assert := assert.New(t)
 	isFound = true
-	isCanonical = true
 	req, _ := http.NewRequest("GET", concordanceURL+"?randomRequestParam=bob", nil)
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
 	assert.EqualValues(400, res.StatusCode)
-}
-
-func noRedirect(req *http.Request, via []*http.Request) error {
-	return errors.New("Don't redirect!")
-}
-
-func TestRedirectHappensOnFoundForAlternateNode(t *testing.T) {
-	assert := assert.New(t)
-	isFound = true
-	isCanonical = false
-	request, _ := http.NewRequest("GET", concordanceURL+"?conceptId=bob", nil)
-	cl := &http.Client{
-		CheckRedirect: noRedirect,
-	}
-	result, err := cl.Do(request)
-
-	assert.Contains(err.Error(), "Don't redirect!")
-	assert.EqualValues(301, result.StatusCode)
-	assert.Equal("/concordances?conceptId="+alternativeId, result.Header.Get("Location"))
-	assert.Equal("application/json; charset=UTF-8", result.Header.Get("Content-Type"))
 }
