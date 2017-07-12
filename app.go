@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/Financial-Times/base-ft-rw-app-go/baseftrwapp"
 	"github.com/Financial-Times/go-fthealth/v1a"
@@ -10,14 +13,11 @@ import (
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/Financial-Times/public-concordances-api/concordances"
 	status "github.com/Financial-Times/service-status-go/httphandlers"
-
-	"fmt"
-	"strconv"
-	"time"
-
 	log "github.com/Sirupsen/logrus"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
+	_ "github.com/joho/godotenv/autoload"
 	"github.com/rcrowley/go-metrics"
 )
 
@@ -108,9 +108,11 @@ func runServer(neoURL string, port string, cacheDuration string, env string) {
 		"Checks for accessing neo4j", concordances.HealthCheck()))
 
 	// Then API specific ones:
-	servicesRouter.HandleFunc("/concordances", concordances.GetConcordances).Methods("GET")
 
-	servicesRouter.HandleFunc("/concordances", concordances.MethodNotAllowedHandler)
+	mh := &handlers.MethodHandler{
+		"GET": http.HandlerFunc(concordances.GetConcordances),
+	}
+	servicesRouter.Handle("/concordances", mh)
 
 	var monitoringRouter http.Handler = servicesRouter
 	monitoringRouter = httphandlers.TransactionAwareRequestLoggingHandler(log.StandardLogger(), monitoringRouter)
@@ -119,8 +121,6 @@ func runServer(neoURL string, port string, cacheDuration string, env string) {
 	// The top one of these feels more correct, but the lower one matches what we have in Dropwizard,
 	// so it's what apps expect currently same as ping, the content of build-info needs more definition
 	//using http router here to be able to catch "/"
-	http.HandleFunc(status.PingPath, status.PingHandler)
-	http.HandleFunc(status.PingPathDW, status.PingHandler)
 	http.HandleFunc(status.BuildInfoPath, status.BuildInfoHandler)
 	http.HandleFunc(status.BuildInfoPathDW, status.BuildInfoHandler)
 	http.HandleFunc("/__gtg", concordances.GoodToGo)

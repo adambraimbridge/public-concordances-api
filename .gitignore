@@ -9,4 +9,4 @@ Compiled source #
 *.log
 public-concordances-api
 
-
+vendor/*/

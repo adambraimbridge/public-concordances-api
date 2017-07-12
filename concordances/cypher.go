@@ -33,9 +33,10 @@ func (pcw CypherDriver) CheckConnectivity() error {
 }
 
 type neoReadStruct struct {
-	UUID          string        `json:"uuid"`
-	Types         []string      `json:"types"`
-	NeoIdentifier neoIdentifier `json:"neoIdentifier"`
+	UUID          string        `json:"UUID"`
+	Types         []string      `json:"TYPES"`
+	NeoIdentifier neoIdentifier `json:"IDENTIFIERS"`
+	PrefUUID      string        `json:"prefUUID"`
 }
 
 type neoIdentifier struct {
@@ -48,25 +49,158 @@ type neoResultStrunct struct {
 }
 
 func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Concordances, found bool, err error) {
-	concordances = Concordances{}
-	results := []neoResultStrunct{}
+	c, f, err := pcw.readByConceptIDNewModel(identifiers)
+	if !f {
+		c, f, err = pcw.readByConceptIDOldModel(identifiers)
+	}
+	return c, f, err
+}
+
+func (pcw CypherDriver) readByConceptIDNewModel(identifiers []string) (concordances Concordances, found bool, err error) {
+	results := []neoReadStruct{}
 	query := &neoism.CypherQuery{
 		Statement: `
-		MATCH (p:Concept)<-[:IDENTIFIES]-(i:UPPIdentifier)
-		WHERE i.value in {identifiers}
-		MATCH (p:Concept)<-[:IDENTIFIES]-(ids:Identifier)
-		RETURN collect({uuid:p.uuid, types:labels(p), neoIdentifier:{labels:labels(ids), value:ids.value}}) as rs
+		MATCH (p:Concept)-[:EQUIVALENT_TO]-(cn:Concept)
+		WHERE p.uuid in {identifiers}
+		MATCH (cn)-[:EQUIVALENT_TO]-(cnn:Concept)
+		RETURN cn.prefUUID as prefUUID, cnn.uuid AS UUID, labels(cnn) AS TYPES, {labels:collect(cnn.authority), value:cnn.authorityValue} as IDENTIFIERS
 		`,
 		Parameters: neoism.Props{"identifiers": identifiers},
 		Result:     &results,
 	}
 
+	err = pcw.conn.CypherBatch([]*neoism.CypherQuery{query})
+	if err != nil {
+		log.Errorf("Error looking up Concordances with query %s from neoism: %+v\n", query.Statement, err)
+		return Concordances{}, false, fmt.Errorf("Error accessing Concordance datastore for identifier:")
+	}
+
+	log.Info(results)
+
+	if (len(results)) == 0 {
+		return Concordances{}, false, nil
+	}
+
+	concordances = Concordances{
+		Concordance: []Concordance{},
+	}
+
+	for _, neoCon := range results {
+		log.Info(neoCon)
+		// Each record is now two identifiers, one UPP and one other.
+		var con = Concordance{}
+		var concept = Concept{}
+		concept.ID = mapper.IDURL(neoCon.PrefUUID)
+		concept.APIURL = mapper.APIURL(neoCon.PrefUUID, neoCon.Types, pcw.env)
+		con.Concept = concept
+		con.Identifier = Identifier{Authority: mapNeoLabelsToAuthorityValue(neoCon.NeoIdentifier.Labels), IdentifierValue: neoCon.NeoIdentifier.Value}
+		concordances.Concordance = append(concordances.Concordance, con)
+
+		var con2 = Concordance{}
+		var concept2 = Concept{}
+		concept2.ID = mapper.IDURL(neoCon.PrefUUID)
+		concept2.APIURL = mapper.APIURL(neoCon.PrefUUID, neoCon.Types, pcw.env)
+		con2.Concept = concept
+		con2.Identifier = Identifier{Authority: UP_AUTHORITY, IdentifierValue: neoCon.UUID}
+		concordances.Concordance = append(concordances.Concordance, con2)
+	}
+
+	if (len(concordances.Concordance)) == 0 {
+		return Concordances{}, false, nil
+	}
+
+	log.Debugf("Returning %v", concordances)
+	return concordances, true, nil
+}
+
+func (pcw CypherDriver) readByConceptIDOldModel(identifiers []string) (concordances Concordances, found bool, err error) {
+	results := []neoReadStruct{}
+	query := &neoism.CypherQuery{
+		Statement: `
+		MATCH (p:Concept)<-[:IDENTIFIES]-(i:UPPIdentifier)
+		WHERE i.value in {identifiers}
+		MATCH (p:Concept)<-[:IDENTIFIES]-(ids:Identifier)
+		RETURN p.uuid as prefUUID, p.uuid AS UUID, labels(p) AS TYPES, {labels:labels(ids), value:ids.value} as IDENTIFIERS
+		`,
+		Parameters: neoism.Props{"identifiers": identifiers},
+		Result:     &results,
+	}
 	return processCypherQueryToConcordances(pcw, query, &results)
 }
 
 func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []string) (concordances Concordances, found bool, err error) {
+	c, f, err := pcw.readByAuthorityNewModel(authority, identifierValues)
+	if !f {
+		c, f, err = pcw.readByAuthorityOldModel(authority, identifierValues)
+	}
+	return c, f, err
+}
+
+func (pcw CypherDriver) readByAuthorityNewModel(authority string, identifierValues []string) (concordances Concordances, found bool, err error) {
+	log.Info("readByAuthorityNewModel")
 	concordances = Concordances{}
-	results := []neoResultStrunct{}
+	results := []neoReadStruct{}
+
+	authorityProperty := mapAuthorityToAuthorityProperty(authority)
+	log.Info(authorityProperty)
+	if authorityProperty == "" {
+		return Concordances{}, false, nil
+	}
+
+	readByAuthorityQueryStatement := `
+		MATCH (p:Concept)-[:EQUIVALENT_TO]-(cn:Concept)
+		WHERE p.authorityValue in {identifierValues} AND p.authority = {authority}
+		RETURN cn.prefUUID as prefUUID, cn.prefUUID AS UUID, labels(cn) AS TYPES, {labels:collect(p.authority), value:p.authorityValue} as IDENTIFIERS
+		`
+	query := &neoism.CypherQuery{
+		Statement: readByAuthorityQueryStatement,
+		Parameters: neoism.Props{
+			"identifierValues": identifierValues,
+			"authority":        authorityProperty,
+		},
+		Result: &results,
+	}
+
+	err = pcw.conn.CypherBatch([]*neoism.CypherQuery{query})
+	if err != nil {
+		log.Errorf("Error looking up Concordances with query %s from neoism: %+v\n", query.Statement, err)
+		return Concordances{}, false, fmt.Errorf("Error accessing Concordance datastore for identifier:")
+	}
+
+	log.Info(results)
+
+	if (len(results)) == 0 {
+		return Concordances{}, false, nil
+	}
+
+	concordances = Concordances{
+		Concordance: []Concordance{},
+	}
+
+	for _, neoCon := range results {
+		log.Info(neoCon)
+		// Each record is now two identifiers, one UPP and one other.
+		var con = Concordance{}
+		var concept = Concept{}
+		concept.ID = mapper.IDURL(neoCon.PrefUUID)
+		concept.APIURL = mapper.APIURL(neoCon.PrefUUID, neoCon.Types, pcw.env)
+		con.Concept = concept
+		con.Identifier = Identifier{Authority: mapNeoLabelsToAuthorityValue(neoCon.NeoIdentifier.Labels), IdentifierValue: neoCon.NeoIdentifier.Value}
+		concordances.Concordance = append(concordances.Concordance, con)
+	}
+
+	if (len(concordances.Concordance)) == 0 {
+		return Concordances{}, false, nil
+	}
+
+	log.Debugf("Returning %v", concordances)
+	return concordances, true, nil
+}
+
+func (pcw CypherDriver) readByAuthorityOldModel(authority string, identifierValues []string) (concordances Concordances, found bool, err error) {
+	log.Info("readByAuthorityOldModel")
+	concordances = Concordances{}
+	results := []neoReadStruct{}
 
 	identifierLabel := mapAuthorityToIdentifierLabel(authority)
 
@@ -77,7 +211,7 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 	readByAuthorityQueryStatement := fmt.Sprintf(`
 		MATCH (p:Concept)<-[:IDENTIFIES]-(i:%s)
 		WHERE i.value in {identifierValues}
-		RETURN collect({uuid:p.uuid, types:labels(p), neoIdentifier:{labels:labels(i), value:i.value}}) as rs
+		RETURN p.uuid as prefUUID, p.uuid AS UUID, labels(p) AS TYPES, {labels:labels(i), value:i.value} as IDENTIFIERS
 		`, identifierLabel)
 
 	query := &neoism.CypherQuery{
@@ -91,7 +225,7 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 	return processCypherQueryToConcordances(pcw, query, &results)
 }
 
-func processCypherQueryToConcordances(pcw CypherDriver, q *neoism.CypherQuery, results *[]neoResultStrunct) (concordances Concordances, found bool, err error) {
+func processCypherQueryToConcordances(pcw CypherDriver, q *neoism.CypherQuery, results *[]neoReadStruct) (concordances Concordances, found bool, err error) {
 	err = pcw.conn.CypherBatch([]*neoism.CypherQuery{q})
 	if err != nil {
 		log.Errorf("Error looking up Concordances with query %s from neoism: %+v\n", q.Statement, err)
@@ -102,7 +236,7 @@ func processCypherQueryToConcordances(pcw CypherDriver, q *neoism.CypherQuery, r
 		return Concordances{}, false, nil
 	}
 
-	concordances = neoReadStructToConcordances(&(*results)[0].Rs, pcw.env)
+	concordances = neoReadStructToConcordances(results, pcw.env)
 
 	if (len(concordances.Concordance)) == 0 {
 		return Concordances{}, false, nil
@@ -113,17 +247,18 @@ func processCypherQueryToConcordances(pcw CypherDriver, q *neoism.CypherQuery, r
 }
 
 func neoReadStructToConcordances(neo *[]neoReadStruct, env string) (concordances Concordances) {
+	log.Debug("Running the old model")
 	concordances = Concordances{
-		Concordance: make([]Concordance, len(*neo)),
+		Concordance: []Concordance{},
 	}
-	for i, neoCon := range *neo {
+	for _, neoCon := range *neo {
 		var con = Concordance{}
 		var concept = Concept{}
 		concept.ID = mapper.IDURL(neoCon.UUID)
 		concept.APIURL = mapper.APIURL(neoCon.UUID, neoCon.Types, env)
 		con.Concept = concept
 		con.Identifier = Identifier{Authority: mapNeoLabelsToAuthorityValue(neoCon.NeoIdentifier.Labels), IdentifierValue: neoCon.NeoIdentifier.Value}
-		concordances.Concordance[i] = con
+		concordances.Concordance = append(concordances.Concordance, con)
 	}
 	return concordances
 }
@@ -131,6 +266,7 @@ func neoReadStructToConcordances(neo *[]neoReadStruct, env string) (concordances
 func mapNeoLabelsToAuthorityValue(labelNames []string) (authority string) {
 	for _, label := range labelNames {
 		switch label {
+		// Old style node label lookup
 		case TME_ID_NODE_LABEL:
 			return TME_AUTHORITY
 		case FS_ID_NODE_LABEL:
@@ -139,9 +275,36 @@ func mapNeoLabelsToAuthorityValue(labelNames []string) (authority string) {
 			return UP_AUTHORITY
 		case LEI_ID_NODE_LABEL:
 			return LEI_AUTHORITY
+		case SL_ID_NODE_LABEL:
+			return SL_AUTHORITY
+
+		// New style authority properties
+		case FS_AUTHORITY_PROPERTY:
+			return FS_AUTHORITY
+		case UP_AUTHORITY_PROPERTY:
+			return UP_AUTHORITY
+		case SL_AUTHORITY_PROPERTY:
+			return SL_AUTHORITY
+		case TME_AUTHORITY_PROPERTY:
+			return TME_AUTHORITY
 		}
 	}
 	return ""
+}
+
+func mapAuthorityToAuthorityProperty(authority string) string {
+	switch authority {
+	case TME_AUTHORITY:
+		return TME_AUTHORITY_PROPERTY
+	case FS_AUTHORITY:
+		return FS_AUTHORITY_PROPERTY
+	case UP_AUTHORITY:
+		return UP_AUTHORITY_PROPERTY
+	case SL_AUTHORITY:
+		return SL_AUTHORITY_PROPERTY
+	default:
+		return ""
+	}
 }
 
 func mapAuthorityToIdentifierLabel(authority string) (label string) {
@@ -162,8 +325,15 @@ const TME_AUTHORITY = "http://api.ft.com/system/FT-TME"
 const FS_AUTHORITY = "http://api.ft.com/system/FACTSET"
 const UP_AUTHORITY = "http://api.ft.com/system/UPP"
 const LEI_AUTHORITY = "http://api.ft.com/system/LEI"
+const SL_AUTHORITY = "http://api.ft.com/system/SMARTLOGIC"
 
 const TME_ID_NODE_LABEL = "TMEIdentifier"
 const FS_ID_NODE_LABEL = "FactsetIdentifier"
 const UP_ID_NODE_LABEL = "UPPIdentifier"
 const LEI_ID_NODE_LABEL = "LegalEntityIdentifier"
+const SL_ID_NODE_LABEL = "SmartlogicIdentifier"
+
+const TME_AUTHORITY_PROPERTY = "TME"
+const FS_AUTHORITY_PROPERTY = "FACTSET"
+const UP_AUTHORITY_PROPERTY = "UPP"
+const SL_AUTHORITY_PROPERTY = "Smartlogic"
