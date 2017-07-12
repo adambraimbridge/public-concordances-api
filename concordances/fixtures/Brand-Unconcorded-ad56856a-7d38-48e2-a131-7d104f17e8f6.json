@@ -1,0 +1,46 @@
+{
+  "prefUUID": "b20801ac-5a76-43cf-b816-8c3b2f7133ad",
+  "prefLabel": "Spelling mistakes",
+  "type": "Brand",
+  "aliases": [
+    "Spelling mistakes",
+    "The Roman"
+  ],
+  "strapline": "All those spelling mistakes",
+  "descriptionXML": "I can't spell, and neither can you.  Lets fix that together!",
+  "_imageUrl": "http://im.ft-static.com/content/images/b20801ac-5a76-43cf-b816-8c3b2f7133ad.png",
+  "parentUUIDs": [
+    "dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "70f4732b-7f7d-30a1-9c29-0cceec23760e",
+      "prefLabel": "The Roman",
+      "authority": "TME",
+      "authorityValue": "VGhlIFJvbWFu-QnJhbmRz",
+      "aliases": [
+        "The Roman"
+      ],
+      "parentUUIDs": [
+        "dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"
+      ],
+      "type": "Brand"
+    },
+    {
+      "uuid": "b20801ac-5a76-43cf-b816-8c3b2f7133ad",
+      "prefLabel": "Spelling mistakes",
+      "authority": "Smartlogic",
+      "authorityValue": "b20801ac-5a76-43cf-b816-8c3b2f7133ad",
+      "aliases": [
+        "Spelling mistakes"
+      ],
+      "parentUUIDs": [
+        "dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"
+      ],
+      "strapline": "All those spelling mistakes",
+      "descriptionXML": "I can't spell, and neither can you.  Lets fix that together!",
+      "_imageUrl": "http://im.ft-static.com/content/images/b20801ac-5a76-43cf-b816-8c3b2f7133ad.png",
+      "type": "Brand"
+    }
+  ]
+}
