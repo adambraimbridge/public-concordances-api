@@ -152,11 +152,13 @@ func (pcw CypherDriver) readByAuthorityNewModel(authority string, identifierValu
 		WHERE p.authorityValue in {identifierValues} AND p.authority = {authority}
 		RETURN cn.prefUUID as prefUUID, cn.prefUUID AS UUID, labels(cn) AS TYPES, {labels:collect(p.authority), value:p.authorityValue} as IDENTIFIERS
 		`
+
+	// Special handling for UPP authority.  In for compatibility with the old model but may be removed once identifiers are removed.
 	if authorityProperty == "UPP" {
 		readByAuthorityQueryStatement = `
 			MATCH (p:Concept)-[:EQUIVALENT_TO]-(cn:Concept)
 			WHERE p.uuid in {identifierValues}
-			RETURN cn.prefUUID as prefUUID, cn.prefUUID AS UUID, labels(cn) AS TYPES, {labels:collect(p.authority), value:p.authorityValue} as IDENTIFIERS
+			RETURN cn.prefUUID as prefUUID, cn.prefUUID AS UUID, labels(cn) AS TYPES, {labels:["UPP"], value:p.uuid} as IDENTIFIERS
 		`
 	}
 
