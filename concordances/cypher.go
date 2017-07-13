@@ -152,6 +152,14 @@ func (pcw CypherDriver) readByAuthorityNewModel(authority string, identifierValu
 		WHERE p.authorityValue in {identifierValues} AND p.authority = {authority}
 		RETURN cn.prefUUID as prefUUID, cn.prefUUID AS UUID, labels(cn) AS TYPES, {labels:collect(p.authority), value:p.authorityValue} as IDENTIFIERS
 		`
+	if authorityProperty == "UPP" {
+		readByAuthorityQueryStatement = `
+			MATCH (p:Concept)-[:EQUIVALENT_TO]-(cn:Concept)
+			WHERE p.uuid in {identifierValues}
+			RETURN cn.prefUUID as prefUUID, cn.prefUUID AS UUID, labels(cn) AS TYPES, {labels:collect(p.authority), value:p.authorityValue} as IDENTIFIERS
+		`
+	}
+
 	query := &neoism.CypherQuery{
 		Statement: readByAuthorityQueryStatement,
 		Parameters: neoism.Props{
