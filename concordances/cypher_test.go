@@ -26,7 +26,7 @@ func TestNeoReadByConceptID_NewModel_Unconcorded(t *testing.T) {
 	conc, found, err := undertest.ReadByConceptID([]string{"ad56856a-7d38-48e2-a131-7d104f17e8f6"})
 	assert.NoError(err)
 	assert.True(found)
-	assert.Equal(2, len(conc.Concordance))
+	assert.Equal(1, len(conc.Concordance))
 }
 
 func TestNeoReadByConceptID_NewModel_Concorded(t *testing.T) {
@@ -41,7 +41,7 @@ func TestNeoReadByConceptID_NewModel_Concorded(t *testing.T) {
 	conc, found, err := undertest.ReadByConceptID([]string{"b20801ac-5a76-43cf-b816-8c3b2f7133ad"})
 	assert.NoError(err)
 	assert.True(found)
-	assert.Equal(4, len(conc.Concordance))
+	assert.Equal(2, len(conc.Concordance))
 }
 
 func TestNeoReadByAuthority_NewModel_Unconcorded(t *testing.T) {

@@ -86,8 +86,7 @@ func (pcw CypherDriver) readByConceptIDNewModel(identifiers []string) (concordan
 	}
 
 	for _, neoCon := range results {
-		log.Info(neoCon)
-		// Each record is now two identifiers, one UPP and one other.
+		log.Debug(neoCon)
 		var con = Concordance{}
 		var concept = Concept{}
 		concept.ID = mapper.IDURL(neoCon.PrefUUID)
@@ -95,14 +94,6 @@ func (pcw CypherDriver) readByConceptIDNewModel(identifiers []string) (concordan
 		con.Concept = concept
 		con.Identifier = Identifier{Authority: mapNeoLabelsToAuthorityValue(neoCon.NeoIdentifier.Labels), IdentifierValue: neoCon.NeoIdentifier.Value}
 		concordances.Concordance = append(concordances.Concordance, con)
-
-		var con2 = Concordance{}
-		var concept2 = Concept{}
-		concept2.ID = mapper.IDURL(neoCon.PrefUUID)
-		concept2.APIURL = mapper.APIURL(neoCon.PrefUUID, neoCon.Types, pcw.env)
-		con2.Concept = concept
-		con2.Identifier = Identifier{Authority: UP_AUTHORITY, IdentifierValue: neoCon.UUID}
-		concordances.Concordance = append(concordances.Concordance, con2)
 	}
 
 	if (len(concordances.Concordance)) == 0 {
@@ -120,6 +111,7 @@ func (pcw CypherDriver) readByConceptIDOldModel(identifiers []string) (concordan
 		MATCH (p:Concept)<-[:IDENTIFIES]-(i:UPPIdentifier)
 		WHERE i.value in {identifiers}
 		MATCH (p:Concept)<-[:IDENTIFIES]-(ids:Identifier)
+		WHERE NOT ids:UPPIdentifier
 		RETURN p.uuid as prefUUID, p.uuid AS UUID, labels(p) AS TYPES, {labels:labels(ids), value:ids.value} as IDENTIFIERS
 		`,
 		Parameters: neoism.Props{"identifiers": identifiers},
@@ -137,7 +129,7 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 }
 
 func (pcw CypherDriver) readByAuthorityNewModel(authority string, identifierValues []string) (concordances Concordances, found bool, err error) {
-	log.Info("readByAuthorityNewModel")
+	log.Debug("readByAuthorityNewModel")
 	concordances = Concordances{}
 	results := []neoReadStruct{}
 
@@ -152,15 +144,6 @@ func (pcw CypherDriver) readByAuthorityNewModel(authority string, identifierValu
 		WHERE p.authorityValue in {identifierValues} AND p.authority = {authority}
 		RETURN cn.prefUUID as prefUUID, cn.prefUUID AS UUID, labels(cn) AS TYPES, {labels:collect(p.authority), value:p.authorityValue} as IDENTIFIERS
 		`
-
-	// Special handling for UPP authority.  In for compatibility with the old model but may be removed once identifiers are removed.
-	if authorityProperty == "UPP" {
-		readByAuthorityQueryStatement = `
-			MATCH (p:Concept)-[:EQUIVALENT_TO]-(cn:Concept)
-			WHERE p.uuid in {identifierValues}
-			RETURN cn.prefUUID as prefUUID, cn.prefUUID AS UUID, labels(cn) AS TYPES, {labels:["UPP"], value:p.uuid} as IDENTIFIERS
-		`
-	}
 
 	query := &neoism.CypherQuery{
 		Statement: readByAuthorityQueryStatement,
@@ -208,7 +191,7 @@ func (pcw CypherDriver) readByAuthorityNewModel(authority string, identifierValu
 }
 
 func (pcw CypherDriver) readByAuthorityOldModel(authority string, identifierValues []string) (concordances Concordances, found bool, err error) {
-	log.Info("readByAuthorityOldModel")
+	log.Debug("readByAuthorityOldModel")
 	concordances = Concordances{}
 	results := []neoReadStruct{}
 
@@ -308,8 +291,6 @@ func mapAuthorityToAuthorityProperty(authority string) string {
 		return TME_AUTHORITY_PROPERTY
 	case FS_AUTHORITY:
 		return FS_AUTHORITY_PROPERTY
-	case UP_AUTHORITY:
-		return UP_AUTHORITY_PROPERTY
 	case SL_AUTHORITY:
 		return SL_AUTHORITY_PROPERTY
 	default:
@@ -323,8 +304,6 @@ func mapAuthorityToIdentifierLabel(authority string) (label string) {
 		return TME_ID_NODE_LABEL
 	case FS_AUTHORITY:
 		return FS_ID_NODE_LABEL
-	case UP_AUTHORITY:
-		return UP_ID_NODE_LABEL
 	case LEI_AUTHORITY:
 		return LEI_ID_NODE_LABEL
 	}
