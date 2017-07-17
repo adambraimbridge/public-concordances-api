@@ -143,7 +143,7 @@ func TestNeoReadByConceptIdReturnMultipleConcordancesForMultipleIdentifiers(t *t
 	assert.NoError(err)
 	assert.True(found)
 	assert.NotEmpty(cs.Concordance)
-	assert.Equal(len(cs.Concordance), 3)
+	assert.Equal(len(cs.Concordance), 2)
 
 }
 
