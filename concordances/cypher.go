@@ -154,7 +154,7 @@ func (pcw CypherDriver) readByAuthorityNewModel(authority string, identifierValu
 	err = pcw.conn.CypherBatch([]*neoism.CypherQuery{query})
 	if err != nil {
 		log.Errorf("Error looking up Concordances with query %s from neoism: %+v\n", query.Statement, err)
-		return Concordances{}, false, fmt.Errorf("Error accessing Concordance datastore for identifier:")
+		return Concordances{}, false, fmt.Errorf("Error accessing Concordance datastore for identifiers: %v", identifierValues)
 	}
 
 	if (len(results)) == 0 {
@@ -217,7 +217,7 @@ func processCypherQueryToConcordances(pcw CypherDriver, q *neoism.CypherQuery, r
 	err = pcw.conn.CypherBatch([]*neoism.CypherQuery{q})
 	if err != nil {
 		log.Errorf("Error looking up Concordances with query %s from neoism: %+v\n", q.Statement, err)
-		return Concordances{}, false, fmt.Errorf("Error accessing Concordance datastore for identifier:")
+		return Concordances{}, false, fmt.Errorf("Error accessing Concordance datastore")
 	}
 
 	if (len(*results)) == 0 {
