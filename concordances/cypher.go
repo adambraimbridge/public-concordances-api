@@ -75,8 +75,6 @@ func (pcw CypherDriver) readByConceptIDNewModel(identifiers []string) (concordan
 		return Concordances{}, false, fmt.Errorf("Error accessing Concordance datastore for identifier:")
 	}
 
-	log.Info(results)
-
 	if (len(results)) == 0 {
 		return Concordances{}, false, nil
 	}
@@ -168,7 +166,7 @@ func (pcw CypherDriver) readByAuthorityNewModel(authority string, identifierValu
 	}
 
 	for _, neoCon := range results {
-		log.Info(neoCon)
+		log.Debug(neoCon)
 		// Each record is now two identifiers, one UPP and one other.
 		var con = Concordance{}
 		var concept = Concept{}
