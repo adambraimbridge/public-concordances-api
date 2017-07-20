@@ -1,0 +1,26 @@
+{
+  "prefUUID": "ad56856a-7d38-48e2-a131-7d104f17e8f6",
+  "prefLabel": "Party people",
+  "type": "Brand",
+  "aliases": [
+    "Party people"
+  ],
+  "parentUUIDs": [
+    "dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "ad56856a-7d38-48e2-a131-7d104f17e8f6",
+      "prefLabel": "Party people",
+      "authority": "TME",
+      "authorityValue": "UGFydHkgcGVvcGxl-QnJhbmRz",
+      "aliases": [
+        "Party people"
+      ],
+      "parentUUIDs": [
+        "dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"
+      ],
+      "type": "Brand"
+    }
+  ]
+}

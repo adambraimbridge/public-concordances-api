@@ -7,27 +7,85 @@ import (
 	"testing"
 
 	"github.com/Financial-Times/base-ft-rw-app-go/baseftrwapp"
+	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/Financial-Times/organisations-rw-neo4j/organisations"
-	"github.com/Financial-Times/people-rw-neo4j/people"
 	"github.com/jmcvetta/neoism"
 	"github.com/stretchr/testify/assert"
 )
 
-// TestNeoReadStructToPersonMandatoryFields checks that mandatory fields are set even if they are empty or nil / null
+func TestNeoReadByConceptID_NewModel_Unconcorded(t *testing.T) {
+	assert := assert.New(t)
+	db := getDatabaseConnection(t, assert)
+	conceptRW, organisationRW := getServices(t, assert, db)
+
+	writeJSONToService(conceptRW, "./fixtures/Brand-Unconcorded-ad56856a-7d38-48e2-a131-7d104f17e8f6.json", assert)
+	defer deleteAllViaService(assert, db, organisationRW)
+
+	undertest := NewCypherDriver(db, "prod")
+	conc, found, err := undertest.ReadByConceptID([]string{"ad56856a-7d38-48e2-a131-7d104f17e8f6"})
+	assert.NoError(err)
+	assert.True(found)
+	assert.Equal(1, len(conc.Concordance))
+}
+
+func TestNeoReadByConceptID_NewModel_Concorded(t *testing.T) {
+	assert := assert.New(t)
+	db := getDatabaseConnection(t, assert)
+	conceptRW, organisationRW := getServices(t, assert, db)
+
+	writeJSONToService(conceptRW, "./fixtures/Brand-Concorded-b20801ac-5a76-43cf-b816-8c3b2f7133ad.json", assert)
+	defer deleteAllViaService(assert, db, organisationRW)
+
+	undertest := NewCypherDriver(db, "prod")
+	conc, found, err := undertest.ReadByConceptID([]string{"b20801ac-5a76-43cf-b816-8c3b2f7133ad"})
+	assert.NoError(err)
+	assert.True(found)
+	assert.Equal(2, len(conc.Concordance))
+}
+
+func TestNeoReadByAuthority_NewModel_Unconcorded(t *testing.T) {
+	assert := assert.New(t)
+	db := getDatabaseConnection(t, assert)
+	conceptRW, organisationRW := getServices(t, assert, db)
+
+	writeJSONToService(conceptRW, "./fixtures/Brand-Unconcorded-ad56856a-7d38-48e2-a131-7d104f17e8f6.json", assert)
+	defer deleteAllViaService(assert, db, organisationRW)
+
+	undertest := NewCypherDriver(db, "prod")
+	conc, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FT-TME", []string{"UGFydHkgcGVvcGxl-QnJhbmRz"})
+	assert.NoError(err)
+	assert.True(found)
+	assert.Equal(1, len(conc.Concordance))
+}
+
+func TestNeoReadByAuthority_NewModel_Concorded(t *testing.T) {
+	assert := assert.New(t)
+	db := getDatabaseConnection(t, assert)
+	conceptRW, organisationRW := getServices(t, assert, db)
+
+	writeJSONToService(conceptRW, "./fixtures/Brand-Concorded-b20801ac-5a76-43cf-b816-8c3b2f7133ad.json", assert)
+	defer deleteAllViaService(assert, db, organisationRW)
+
+	undertest := NewCypherDriver(db, "prod")
+	conc, found, err := undertest.ReadByAuthority("http://api.ft.com/system/SMARTLOGIC", []string{"b20801ac-5a76-43cf-b816-8c3b2f7133ad"})
+	assert.NoError(err)
+	assert.True(found)
+	assert.Equal(1, len(conc.Concordance))
+}
+
 func TestNeoReadByConceptIDToConcordancesMandatoryFields(t *testing.T) {
 
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
 
-	peopleRW, organisationRW := getServices(t, assert, db)
-	writeJSONToService(peopleRW, "./fixtures/Person-Dan_Murphy-868c3c17-611c-4943-9499-600ccded71f3.json", assert)
+	_, organisationRW := getServices(t, assert, db)
 	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
 
-	defer deleteAllViaService(assert, peopleRW, organisationRW)
+	defer deleteAllViaService(assert, db, organisationRW)
 
 	undertest := NewCypherDriver(db, "prod")
-	cs, found, err := undertest.ReadByConceptID([]string{"868c3c17-611c-4943-9499-600ccded71f3"})
+	cs, found, err := undertest.ReadByConceptID([]string{"f21a5cc0-d326-4e62-b84a-d840c2209fee"})
 	assert.NoError(err)
 	assert.True(found)
 	assert.NotEmpty(cs.Concordance)
@@ -39,14 +97,13 @@ func TestNeoReadByAuthorityToConcordancesMandatoryFields(t *testing.T) {
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
 
-	peopleRW, organisationRW := getServices(t, assert, db)
-	writeJSONToService(peopleRW, "./fixtures/Person-Dan_Murphy-868c3c17-611c-4943-9499-600ccded71f3.json", assert)
+	_, organisationRW := getServices(t, assert, db)
 	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
 
-	defer deleteAllViaService(assert, peopleRW, organisationRW)
+	defer deleteAllViaService(assert, db, organisationRW)
 
 	undertest := NewCypherDriver(db, "prod")
-	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FACTSET", []string{"DANMUR-1"})
+	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FACTSET", []string{"003JLG-E"})
 	assert.NoError(err)
 	assert.True(found)
 	assert.NotEmpty(cs.Concordance)
@@ -58,13 +115,13 @@ func TestNeoReadByAuthorityOnlyOneConcordancePerIdentifierValue(t *testing.T) {
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
 
-	peopleRW, organisationRW := getServices(t, assert, db)
-	writeJSONToService(peopleRW, "./fixtures/Person-Berni_Varga-ea56ae1d-5241-413d-827d-11aa90f983f8.json", assert)
+	_, organisationRW := getServices(t, assert, db)
+	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
 
-	defer deleteAllViaService(assert, peopleRW, organisationRW)
+	defer deleteAllViaService(assert, db, organisationRW)
 
 	undertest := NewCypherDriver(db, "prod")
-	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FT-TME", []string{"jhdgfjhdagfjd00YTc2LWFkNDgtMGFiZjE4NGEzYTYy-T04"})
+	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FACTSET", []string{"003JLG-E"})
 	assert.NoError(err)
 	assert.True(found)
 	assert.NotEmpty(cs.Concordance)
@@ -76,17 +133,17 @@ func TestNeoReadByConceptIdReturnMultipleConcordancesForMultipleIdentifiers(t *t
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
 
-	peopleRW, organisationRW := getServices(t, assert, db)
-	writeJSONToService(peopleRW, "./fixtures/Person-Berni_Varga-ea56ae1d-5241-413d-827d-11aa90f983f8.json", assert)
+	_, organisationRW := getServices(t, assert, db)
+	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
 
-	defer deleteAllViaService(assert, peopleRW, organisationRW)
+	defer deleteAllViaService(assert, db, organisationRW)
 
 	undertest := NewCypherDriver(db, "prod")
-	cs, found, err := undertest.ReadByConceptID([]string{"ea56ae1d-5241-413d-827d-11aa90f983f8"})
+	cs, found, err := undertest.ReadByConceptID([]string{"f21a5cc0-d326-4e62-b84a-d840c2209fee"})
 	assert.NoError(err)
 	assert.True(found)
 	assert.NotEmpty(cs.Concordance)
-	assert.Equal(len(cs.Concordance), 4)
+	assert.Equal(len(cs.Concordance), 2)
 
 }
 
@@ -95,11 +152,10 @@ func TestNeoReadByAuthorityEmptyConcordancesWhenUnsupportedAuthority(t *testing.
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
 
-	peopleRW, organisationRW := getServices(t, assert, db)
-	writeJSONToService(peopleRW, "./fixtures/Person-Dan_Murphy-868c3c17-611c-4943-9499-600ccded71f3.json", assert)
+	_, organisationRW := getServices(t, assert, db)
 	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
 
-	defer deleteAllViaService(assert, peopleRW, organisationRW)
+	defer deleteAllViaService(assert, db, organisationRW)
 
 	undertest := NewCypherDriver(db, "prod")
 	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/UnsupportedAuthority", []string{"DANMUR-1"})
@@ -110,11 +166,11 @@ func TestNeoReadByAuthorityEmptyConcordancesWhenUnsupportedAuthority(t *testing.
 }
 
 func getServices(t *testing.T, assert *assert.Assertions, db neoutils.NeoConnection) (baseftrwapp.Service, baseftrwapp.Service) {
-	peopleRW := people.NewCypherPeopleService(db)
-	assert.NoError(peopleRW.Initialise())
+	conceptRW := concepts.NewConceptService(db)
+	assert.NoError(conceptRW.Initialise())
 	organisationRW := organisations.NewCypherOrganisationService(db)
 	assert.NoError(organisationRW.Initialise())
-	return peopleRW, organisationRW
+	return conceptRW, organisationRW
 }
 
 func getDatabaseConnection(t *testing.T, assert *assert.Assertions) neoutils.NeoConnection {
@@ -136,14 +192,30 @@ func writeJSONToService(service baseftrwapp.Service, pathToJSONFile string, asse
 	dec := json.NewDecoder(f)
 	inst, _, errr := service.DecodeJSON(dec)
 	assert.NoError(errr)
-	errrr := service.Write(inst)
+	errrr := service.Write(inst, "test_transaction_id")
 	assert.NoError(errrr)
 }
 
-func deleteAllViaService(assert *assert.Assertions, peopleRW baseftrwapp.Service, organisationRW baseftrwapp.Service) {
-	peopleRW.Delete("868c3c17-611c-4943-9499-600ccded71f3")
-	peopleRW.Delete("ea56ae1d-5241-413d-827d-11aa90f983f8")
-	organisationRW.Delete("f21a5cc0-d326-4e62-b84a-d840c2209fee")
+func deleteAllViaService(assert *assert.Assertions, db neoutils.NeoConnection, organisationRW baseftrwapp.Service) {
+	organisationRW.Delete("f21a5cc0-d326-4e62-b84a-d840c2209fee", "test_transaction_id")
+
+	qs := []*neoism.CypherQuery{
+		{
+			Statement: fmt.Sprintf("MATCH (t:Thing {uuid: '%v'})--(i:Identifier) OPTIONAL MATCH (t)-[:EQUIVALENT_TO]-(e:Thing) DETACH DELETE t, i", "70f4732b-7f7d-30a1-9c29-0cceec23760e"),
+		}, {
+			Statement: fmt.Sprintf("MATCH (t:Thing {uuid: '%v'})--(i:Identifier) OPTIONAL MATCH (t)-[:EQUIVALENT_TO]-(e:Thing) DETACH DELETE t, e, i", "b20801ac-5a76-43cf-b816-8c3b2f7133ad"),
+		}, {
+			Statement: fmt.Sprintf("MATCH (t:Thing {uuid: '%v'})--(i:Identifier) OPTIONAL MATCH (t)-[:EQUIVALENT_TO]-(e:Thing) DETACH DELETE t, i", "ad56856a-7d38-48e2-a131-7d104f17e8f6"),
+		}, {
+			Statement: fmt.Sprintf("MATCH (t:Thing {uuid: '%v'})--(i:Identifier) OPTIONAL MATCH (t)-[:EQUIVALENT_TO]-(e:Thing) DETACH DELETE t, i", "dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"),
+		}, {
+			Statement: fmt.Sprintf("MATCH (t:Thing {prefUUID: '%v'}) DETACH DELETE t", "ad56856a-7d38-48e2-a131-7d104f17e8f6"),
+		},
+	}
+
+	err := db.CypherBatch(qs)
+	assert.NoError(err)
+
 }
 
 func cleanUpParentOrgAndUppIdentifier(db neoutils.NeoConnection, t *testing.T, assert *assert.Assertions) {

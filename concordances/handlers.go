@@ -7,9 +7,10 @@ import (
 	"net/url"
 
 	"errors"
+	"strings"
+
 	"github.com/Financial-Times/go-fthealth/v1a"
 	log "github.com/Sirupsen/logrus"
-	"strings"
 )
 
 // ConcordanceDriver for cypher queries
@@ -37,11 +38,6 @@ func Checker() (string, error) {
 	return "Error connecting to neo4j", err
 }
 
-// Ping says pong
-func Ping(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "pong")
-}
-
 //GoodToGo returns a 503 if the healthcheck fails - suitable for use from varnish to check availability of a node
 func GoodToGo(writer http.ResponseWriter, req *http.Request) {
 	if _, err := Checker(); err != nil {
@@ -52,12 +48,6 @@ func GoodToGo(writer http.ResponseWriter, req *http.Request) {
 // BuildInfoHandler - This is a stop gap and will be added to when we can define what we should display here
 func BuildInfoHandler(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "build-info")
-}
-
-// MethodNotAllowedHandler handles 405
-func MethodNotAllowedHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusMethodNotAllowed)
-	return
 }
 
 // GetConcordances is the public API
@@ -129,5 +119,4 @@ const (
 	conceptAndAuthorityCannotBeBothPresent   = "If conceptId is present then authority is not a valid parameter"
 	authorityIsMandatoryIfConceptIdIsMissing = "If conceptId is absent then authority is mandatory"
 	neitherConceptIdNorAuthorityPresent      = "Neither conceptId nor authority were present"
-	concordanceNotFound                      = "Concordance not found."
 )
