@@ -25,33 +25,33 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         env: 
         - name: APP_PORT
-          value: "8080" 
+          value: {{ .Values.env.app.port }}
         - name: GRAPHITE_ADDRESS
           valueFrom:
             configMapKeyRef:
               name: global-config
               key: graphite.address
         - name: GRAPHITE_PREFIX
-          value: "coco.services.k8s.public-concordances-api"
+          value: {{ .Values.env.graphite.prefix }}
         - name: LOG_METRICS
-          value: "false" 
+          value: {{ .Values.env.log.metrics }} 
         - name: CACHE_DURATION
-          value: "10m" 
+          value: {{ .Values.env.cache.duration }}
         - name: NEO_URL
           valueFrom:
             configMapKeyRef:
               name: global-config
               key: neo4j.read.only.url  
         ports: 
-        - containerPort: 8080 
+        - containerPort: {{ .Values.env.app.port }} 
         livenessProbe: 
           tcpSocket: 
-            port: 8080 
+            port: {{ .Values.env.app.port }} 
           initialDelaySeconds: 10 
         readinessProbe: 
           httpGet: 
             path: "/__gtg" 
-            port: 8080 
+            port: {{ .Values.env.app.port }} 
           initialDelaySeconds: 15 
           periodSeconds: 30 
         resources: 
