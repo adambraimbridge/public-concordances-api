@@ -26,5 +26,5 @@ RUN apk --no-cache --virtual .build-dependencies add git \
     && rm -rf $GOPATH/src $GOPATH/pkg /usr/local/go
 
 EXPOSE 8080
-
+ 
 CMD ["go-wrapper", "run"]
