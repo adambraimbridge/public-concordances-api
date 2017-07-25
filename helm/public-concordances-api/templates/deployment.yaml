@@ -34,7 +34,7 @@ spec:
         - name: GRAPHITE_PREFIX
           value: {{ .Values.env.graphite.prefix }}
         - name: LOG_METRICS
-          value: {{ .Values.env.log.metrics }} 
+          value: "{{ .Values.env.log.metrics }}" 
         - name: CACHE_DURATION
           value: {{ .Values.env.cache.duration }}
         - name: NEO_URL
