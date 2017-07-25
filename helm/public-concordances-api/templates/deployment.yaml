@@ -24,13 +24,24 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Chart.Version }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         env: 
-        - name: ENV_VAR_1 
-          value: "value for env var 1" 
-        - name: ENV_VAR_WITH_VALUE_IN_CONFIG_MAP 
-          valueFrom: 
-            configMapKeyRef: 
-              name: global-config 
-              key: key.for.configmap.entry 
+        - name: APP_PORT
+          value: "8080" 
+        - name: GRAPHITE_ADDRESS
+          valueFrom:
+            configMapKeyRef:
+              name: global-config
+              key: graphite.address
+        - name: GRAPHITE_PREFIX
+          value: "coco.services.k8s.public-concordances-api"
+        - name: LOG_METRICS
+          value: "false" 
+        - name: CACHE_DURATION
+          value: "10m" 
+        - name: NEO_URL
+          valueFrom:
+            configMapKeyRef:
+              name: global-config
+              key: neo4j.read.only.url  
         ports: 
         - containerPort: 8080 
         livenessProbe: 
