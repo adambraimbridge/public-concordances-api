@@ -14,7 +14,7 @@ env:
   graphite: 
     prefix: "coco.services.k8s.public-concordances-api"
   log: 
-    metrics: "false" 
+    metrics: false 
   cache: 
     duration: "10m" 
 resources:
