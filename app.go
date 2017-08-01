@@ -64,10 +64,16 @@ func main() {
 		Desc:   "Duration Get requests should be cached for. e.g. 2h45m would set the max-age value to '7440' seconds",
 		EnvVar: "CACHE_DURATION",
 	})
+	healthcheckInterval := app.String(cli.StringOpt{
+		Name:   "healthcheck-interval",
+		Value:  "30s",
+		Desc:   "How often the Neo4j healthcheck is called.",
+		EnvVar: "HEALTHCHECK_INTERVAL",
+	})
 	app.Action = func() {
 		baseftrwapp.OutputMetricsIfRequired(*graphiteTCPAddress, *graphitePrefix, *logMetrics)
 		log.Infof("public-concordances-api will listen on port: %s, connecting to: %s", *port, *neoURL)
-		runServer(*neoURL, *port, *cacheDuration, *env)
+		runServer(*neoURL, *port, *cacheDuration, *env, *healthcheckInterval)
 	}
 	log.SetFormatter(&log.TextFormatter{DisableColors: true})
 	log.SetLevel(log.InfoLevel)
@@ -75,7 +81,7 @@ func main() {
 	app.Run(os.Args)
 }
 
-func runServer(neoURL string, port string, cacheDuration string, env string) {
+func runServer(neoURL string, port string, cacheDuration string, env string, healthcheckInterval string) {
 
 	if duration, durationErr := time.ParseDuration(cacheDuration); durationErr != nil {
 		log.Fatalf("Failed to parse cache duration string, %v", durationErr)
@@ -100,6 +106,12 @@ func runServer(neoURL string, port string, cacheDuration string, env string) {
 	}
 
 	concordances.ConcordanceDriver = concordances.NewCypherDriver(db, env)
+
+	checkInterval, err := time.ParseDuration(healthcheckInterval)
+	if err != nil {
+		checkInterval = time.Second * 30
+	}
+	concordances.StartAsyncChecker(checkInterval)
 
 	servicesRouter := mux.NewRouter()
 
