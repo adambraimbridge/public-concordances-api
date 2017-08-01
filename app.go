@@ -64,24 +64,46 @@ func main() {
 		Desc:   "Duration Get requests should be cached for. e.g. 2h45m would set the max-age value to '7440' seconds",
 		EnvVar: "CACHE_DURATION",
 	})
+	logLevel := app.String(cli.StringOpt{
+		Name:   "logLevel",
+		Value:  "info",
+		Desc:   "Log level of the app",
+		EnvVar: "LOG_LEVEL",
+	})
 	healthcheckInterval := app.String(cli.StringOpt{
 		Name:   "healthcheck-interval",
 		Value:  "30s",
 		Desc:   "How often the Neo4j healthcheck is called.",
 		EnvVar: "HEALTHCHECK_INTERVAL",
 	})
+	batchSize := app.Int(cli.IntOpt{
+		Name:   "batch-size",
+		Value:  0,
+		Desc:   "Max batch size for Neo4j queries",
+		EnvVar: "BATCH_SIZE",
+	})
 	app.Action = func() {
 		baseftrwapp.OutputMetricsIfRequired(*graphiteTCPAddress, *graphitePrefix, *logMetrics)
 		log.Infof("public-concordances-api will listen on port: %s, connecting to: %s", *port, *neoURL)
-		runServer(*neoURL, *port, *cacheDuration, *env, *healthcheckInterval)
+		runServer(*neoURL, *port, *cacheDuration, *env, *healthcheckInterval, *batchSize)
 	}
-	log.SetFormatter(&log.TextFormatter{DisableColors: true})
-	log.SetLevel(log.InfoLevel)
-	log.Infof("Application started with args %s", os.Args)
+	log.SetFormatter(&log.JSONFormatter{})
+	lvl, err := log.ParseLevel(*logLevel)
+	if err != nil {
+		log.WithField("LOG_LEVEL", *logLevel).Warn("Cannot parse log level, setting it to INFO.")
+		lvl = log.InfoLevel
+	}
+	log.SetLevel(lvl)
+	log.WithFields(log.Fields{
+		"HEALTHCHECK_INTERVAL": *healthcheckInterval,
+		"CACHE_DURATION":       *cacheDuration,
+		"NEO_URL":              *neoURL,
+		"LOG_LEVEL":            *logLevel,
+	}).Info("Starting app with arguments")
 	app.Run(os.Args)
 }
 
-func runServer(neoURL string, port string, cacheDuration string, env string, healthcheckInterval string) {
+func runServer(neoURL string, port string, cacheDuration string, env string, healthcheckInterval string, batchSize int) {
 
 	if duration, durationErr := time.ParseDuration(cacheDuration); durationErr != nil {
 		log.Fatalf("Failed to parse cache duration string, %v", durationErr)
@@ -90,7 +112,7 @@ func runServer(neoURL string, port string, cacheDuration string, env string, hea
 	}
 
 	conf := neoutils.ConnectionConfig{
-		BatchSize:     1024,
+		BatchSize:     batchSize,
 		Transactional: false,
 		HTTPClient: &http.Client{
 			Transport: &http.Transport{
