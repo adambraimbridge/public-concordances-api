@@ -64,6 +64,7 @@ func BuildInfoHandler(w http.ResponseWriter, req *http.Request) {
 // GetConcordances is the public API
 func GetConcordances(w http.ResponseWriter, r *http.Request) {
 
+	log.Debugf("Concordance request: %s", r.URL.RawQuery)
 	m, _ := url.ParseQuery(r.URL.RawQuery)
 
 	_, conceptIDExist := m["conceptId"]
