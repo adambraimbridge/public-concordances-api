@@ -137,10 +137,6 @@ func runServer(neoURL string, port string, cacheDuration string, env string, hea
 
 	servicesRouter := mux.NewRouter()
 
-	// Healthchecks and standards first
-	servicesRouter.HandleFunc("/__health", v1a.Handler("PublicConcordancesRead Healthchecks",
-		"Checks for accessing neo4j", concordances.HealthCheck()))
-
 	// Then API specific ones:
 
 	mh := &handlers.MethodHandler{
@@ -158,6 +154,8 @@ func runServer(neoURL string, port string, cacheDuration string, env string, hea
 	http.HandleFunc(status.BuildInfoPath, status.BuildInfoHandler)
 	http.HandleFunc(status.BuildInfoPathDW, status.BuildInfoHandler)
 	http.HandleFunc("/__gtg", concordances.GoodToGo)
+	http.HandleFunc("/__health", v1a.Handler("PublicConcordancesRead Healthchecks",
+		"Checks for accessing neo4j", concordances.HealthCheck()))
 	http.Handle("/", monitoringRouter)
 
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
