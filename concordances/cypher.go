@@ -127,7 +127,7 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 }
 
 func (pcw CypherDriver) readByAuthorityNewModel(authority string, identifierValues []string) (concordances Concordances, found bool, err error) {
-	log.Debug("readByAuthorityNewModel")
+	log.Debugf("readByAuthorityNewModel: %v", identifierValues)
 	concordances = Concordances{}
 	results := []neoReadStruct{}
 
@@ -186,7 +186,7 @@ func (pcw CypherDriver) readByAuthorityNewModel(authority string, identifierValu
 }
 
 func (pcw CypherDriver) readByAuthorityOldModel(authority string, identifierValues []string) (concordances Concordances, found bool, err error) {
-	log.Debug("readByAuthorityOldModel")
+	log.Debugf("readByAuthorityOldModel: %v", identifierValues)
 	concordances = Concordances{}
 	results := []neoReadStruct{}
 

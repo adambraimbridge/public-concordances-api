@@ -9,6 +9,8 @@ import (
 	"errors"
 	"strings"
 
+	"time"
+
 	"github.com/Financial-Times/go-fthealth/v1a"
 	log "github.com/Sirupsen/logrus"
 )
@@ -16,6 +18,7 @@ import (
 // ConcordanceDriver for cypher queries
 var ConcordanceDriver Driver
 var CacheControlHeader string
+var connCheck error
 
 // HealthCheck does something
 func HealthCheck() v1a.Check {
@@ -29,13 +32,21 @@ func HealthCheck() v1a.Check {
 	}
 }
 
+func StartAsyncChecker(checkInterval time.Duration) {
+	go func(checkInterval time.Duration) {
+		ticker := time.NewTicker(checkInterval)
+		for range ticker.C {
+			connCheck = ConcordanceDriver.CheckConnectivity()
+		}
+	}(checkInterval)
+}
+
 // Checker does more stuff
 func Checker() (string, error) {
-	err := ConcordanceDriver.CheckConnectivity()
-	if err == nil {
-		return "Connectivity to neo4j is ok", err
+	if connCheck == nil {
+		return "Connectivity to neo4j is ok", connCheck
 	}
-	return "Error connecting to neo4j", err
+	return "Error connecting to neo4j", connCheck
 }
 
 //GoodToGo returns a 503 if the healthcheck fails - suitable for use from varnish to check availability of a node
@@ -53,6 +64,7 @@ func BuildInfoHandler(w http.ResponseWriter, req *http.Request) {
 // GetConcordances is the public API
 func GetConcordances(w http.ResponseWriter, r *http.Request) {
 
+	log.Debugf("Concordance request: %s", r.URL.RawQuery)
 	m, _ := url.ParseQuery(r.URL.RawQuery)
 
 	_, conceptIDExist := m["conceptId"]
