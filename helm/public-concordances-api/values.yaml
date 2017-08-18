@@ -7,16 +7,16 @@ service:
 replicaCount: 2
 image:
   repository: coco/public-concordances-api
-  pullPolicy: Always
-env: 
-  app: 
-    port: "8080" 
-  graphite: 
+  pullPolicy: IfNotPresent
+env:
+  app:
+    port: "8080"
+  graphite:
     prefix: "coco.services.k8s.public-concordances-api"
-  log: 
-    metrics: "false" 
-  cache: 
-    duration: "10m" 
+  log:
+    metrics: "false"
+  cache:
+    duration: "10m"
 resources:
   limits:
     memory: 256Mi
