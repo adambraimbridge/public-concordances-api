@@ -12,7 +12,6 @@ import (
 	"github.com/Financial-Times/organisations-rw-neo4j/organisations"
 	"github.com/jmcvetta/neoism"
 	"github.com/stretchr/testify/assert"
-	"github.com/coreos/fleet/log"
 )
 
 func TestNeoReadByConceptID_NewModel_Unconcorded(t *testing.T) {
