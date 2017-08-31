@@ -69,7 +69,7 @@ func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Conc
 	err = pcw.conn.CypherBatch([]*neoism.CypherQuery{query})
 	if err != nil {
 		log.Errorf("Error looking up Concordances with query %s from neoism: %+v\n", query.Statement, err)
-		return Concordances{}, false, fmt.Errorf("Error accessing Concordance datastore for identifier:")
+		return Concordances{}, false, fmt.Errorf("Error accessing Concordance datastore for identifier: %v", identifiers)
 	}
 
 	if (len(results)) == 0 {
