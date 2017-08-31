@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/Financial-Times/go-fthealth/v1a"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // ConcordanceDriver for cypher queries

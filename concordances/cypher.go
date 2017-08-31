@@ -5,8 +5,8 @@ import (
 
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
-	log "github.com/Sirupsen/logrus"
 	"github.com/jmcvetta/neoism"
+	log "github.com/sirupsen/logrus"
 )
 
 // Driver interface
@@ -33,21 +33,17 @@ func (pcw CypherDriver) CheckConnectivity() error {
 }
 
 type neoReadStruct struct {
-	UUID                 string        `json:"UUID"`
-	Types                []string      `json:"TYPES"`
-	NeoIdentifier        neoIdentifier `json:"IDENTIFIERS"`
-	PrefUUID             string        `json:"prefUUID"`
-	canonicalTypes       []string      `json:"canonicalTypes"`
-	canonicalIdentifiers neoIdentifier `json:"canonicalIdentifiers"`
+	UUID                string        `json:"UUID"`
+	PrefUUID            string        `json:"prefUUID"`
+	NewModelTypes       []string      `json:"newModelTypes"`
+	NewModelIdentifiers neoIdentifier `json:"newModelIdentifiers"`
+	OldModelTypes       []string      `json:"oldModelTypes"`
+	OldModelIdentifiers neoIdentifier `json:"oldModelIdentifiers"`
 }
 
 type neoIdentifier struct {
 	Labels []string `json:"labels"`
 	Value  string   `json:"value"`
-}
-
-type neoResultStrunct struct {
-	Rs []neoReadStruct
 }
 
 func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Concordances, found bool, err error) {
@@ -62,8 +58,10 @@ func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Conc
         OPTIONAL MATCH (leafNode:Concept)-[:EQUIVALENT_TO]->(canonical:Concept)
         OPTIONAL MATCH (leafNode:Concept)<-[:IDENTIFIES]-(leafId:Identifier)
         WHERE NOT leafId:UPPIdentifier
-	    RETURN canonical.prefUUID as prefUUID, p.uuid AS UUID, labels(p) AS TYPES, labels(p) AS canonicalTypes, {labels:labels(ids), value:ids.value} as IDENTIFIERS,
-        {labels:labels(leafId), value:leafId.value} as canonicalIdentifiers`,
+	    RETURN canonical.prefUUID as prefUUID, p.uuid AS UUID, labels(p) AS oldModelTypes, labels(p) AS newModelTypes,
+	    {labels:labels(ids), value:ids.value} AS oldModelIdentifiers,
+	    {labels:labels(leafId), value:leafId.value} AS newModelIdentifiers
+        `,
 		Parameters: neoism.Props{"identifiers": identifiers},
 		Result:     &results,
 	}
@@ -82,7 +80,7 @@ func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Conc
 		Concordance: []Concordance{},
 	}
 
-	return processCypherQueryToConcordances(pcw, query, &results)
+	return processCypherQueryToConcordances(pcw, query, results)
 
 }
 
@@ -98,7 +96,9 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 		MATCH (p:Concept)<-[:IDENTIFIES]-(ids:Identifier)
  		WHERE ids.value in {identifierValues} AND NOT ids:UPPIdentifier
         OPTIONAL MATCH (p:Concept)-[:EQUIVALENT_TO]->(canonical:Concept)
-        RETURN canonical.prefUUID as prefUUID, p.uuid AS UUID, labels(p) AS TYPES, labels(canonical) AS canonicalTypes, {labels:labels(ids), value:ids.value} as IDENTIFIERS`,
+        RETURN canonical.prefUUID as prefUUID, p.uuid AS UUID, labels(p) AS oldModelTypes, labels(canonical) AS newModelTypes,
+        {labels:labels(ids), value:ids.value} AS oldModelIdentifiers,
+        {labels:labels(ids), value:ids.value} AS newModelIdentifiers`,
 		Parameters: neoism.Props{
 			"identifierValues": identifierValues,
 			"authority":        authorityProperty,
@@ -120,10 +120,10 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 		Concordance: []Concordance{},
 	}
 
-	return processCypherQueryToConcordances(pcw, query, &results)
+	return processCypherQueryToConcordances(pcw, query, results)
 }
 
-func processCypherQueryToConcordances(pcw CypherDriver, q *neoism.CypherQuery, results *[]neoReadStruct) (concordances Concordances, found bool, err error) {
+func processCypherQueryToConcordances(pcw CypherDriver, q *neoism.CypherQuery, results []neoReadStruct) (concordances Concordances, found bool, err error) {
 	err = pcw.conn.CypherBatch([]*neoism.CypherQuery{q})
 	if err != nil {
 		log.Errorf("Error looking up Concordances with query %s from neoism: %+v\n", q.Statement, err)
@@ -138,24 +138,26 @@ func processCypherQueryToConcordances(pcw CypherDriver, q *neoism.CypherQuery, r
 	return concordances, true, nil
 }
 
-func neoReadStructToConcordances(neo *[]neoReadStruct, env string) (concordances Concordances) {
+func neoReadStructToConcordances(neo []neoReadStruct, env string) (concordances Concordances) {
 	concordances = Concordances{
 		Concordance: []Concordance{},
 	}
-	for _, neoCon := range *neo {
+	for _, neoCon := range neo {
 		var con = Concordance{}
 		var concept = Concept{}
 
 		if neoCon.PrefUUID != "" {
 			log.Debugf("New concept model with prefUUID: %v", neoCon.PrefUUID)
-			concept.ID = neoCon.PrefUUID
-			concept.APIURL = mapper.APIURL(neoCon.PrefUUID, neoCon.canonicalTypes, env)
+			concept.ID = mapper.IDURL(neoCon.PrefUUID)
+			concept.APIURL = mapper.APIURL(neoCon.PrefUUID, neoCon.NewModelTypes, env)
+			con.Identifier = Identifier{Authority: mapNeoLabelsToAuthorityValue(neoCon.NewModelIdentifiers.Labels), IdentifierValue: neoCon.NewModelIdentifiers.Value}
 		} else {
 			log.Debugf("Old concept model with UUID: %v", neoCon.UUID)
 			concept.ID = mapper.IDURL(neoCon.UUID)
-			concept.APIURL = mapper.APIURL(neoCon.UUID, neoCon.Types, env)
+			concept.APIURL = mapper.APIURL(neoCon.UUID, neoCon.OldModelTypes, env)
+			con.Identifier = Identifier{Authority: mapNeoLabelsToAuthorityValue(neoCon.OldModelIdentifiers.Labels), IdentifierValue: neoCon.OldModelIdentifiers.Value}
 		}
-		con.Identifier = Identifier{Authority: mapNeoLabelsToAuthorityValue(neoCon.NeoIdentifier.Labels), IdentifierValue: neoCon.NeoIdentifier.Value}
+
 		con.Concept = concept
 		concordances.Concordance = append(concordances.Concordance, con)
 	}
