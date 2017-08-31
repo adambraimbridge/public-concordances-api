@@ -64,7 +64,6 @@ func TestNeoReadByConceptID_NewModel_And_OldModel(t *testing.T) {
 	conc, found, err := undertest.ReadByConceptID([]string{"b20801ac-5a76-43cf-b816-8c3b2f7133ad", "f21a5cc0-d326-4e62-b84a-d840c2209fee"})
 	assert.NoError(err)
 	assert.True(found)
-	log.Infof("Concordances: \n %v", conc)
 	assert.Equal(4, len(conc.Concordance))
 }
 
@@ -248,7 +247,7 @@ func cleanUp(assert *assert.Assertions, db neoutils.NeoConnection) {
 		}, {
 			Statement: fmt.Sprintf("MATCH (a:Thing {uuid: '%s'})--(i:Identifier) DETACH DELETE i, a", "f21a5cc0-d326-4e62-b84a-d840c2209fee"),
 		}, {
-			Statement: fmt.Sprintf("MATCH (a:Thing {uuid: '%s'})--(i:Identifier) DETACH DELETE i, a",  "f9694ba7-eab0-4ce0-8e01-ff64bccb813c"),
+			Statement: fmt.Sprintf("MATCH (a:Thing {uuid: '%s'})--(i:Identifier) DETACH DELETE i, a", "f9694ba7-eab0-4ce0-8e01-ff64bccb813c"),
 		}, {
 			Statement: fmt.Sprintf("MATCH (t:Thing {uuid: '%v'})--(i:Identifier) OPTIONAL MATCH (t)-[:EQUIVALENT_TO]-(e:Thing) DETACH DELETE t, i", "70f4732b-7f7d-30a1-9c29-0cceec23760e"),
 		}, {
