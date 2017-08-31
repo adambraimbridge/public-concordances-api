@@ -98,8 +98,7 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 		MATCH (p:Concept)<-[:IDENTIFIES]-(ids:Identifier)
  		WHERE ids.value in {identifierValues} AND NOT ids:UPPIdentifier
         OPTIONAL MATCH (p:Concept)-[:EQUIVALENT_TO]->(canonical:Concept)
-        RETURN canonical.prefUUID as prefUUID, p.uuid AS UUID, labels(p) AS TYPES, labels(canonical) AS canonicalTypes, {labels:labels(ids), value:ids.value} as IDENTIFIERS,
-        {labels:collect(p.authority), value:p.authorityValue} as canonicalIdentifiers`,
+        RETURN canonical.prefUUID as prefUUID, p.uuid AS UUID, labels(p) AS TYPES, labels(canonical) AS canonicalTypes, {labels:labels(ids), value:ids.value} as IDENTIFIERS`,
 		Parameters: neoism.Props{
 			"identifierValues": identifierValues,
 			"authority":        authorityProperty,
@@ -150,15 +149,13 @@ func neoReadStructToConcordances(neo *[]neoReadStruct, env string) (concordances
 		if neoCon.PrefUUID != "" {
 			log.Debugf("New concept model with prefUUID: %v", neoCon.PrefUUID)
 			concept.ID = neoCon.PrefUUID
-			con.Identifier = Identifier{Authority: mapNeoLabelsToAuthorityValue(neoCon.canonicalIdentifiers.Labels), IdentifierValue: neoCon.canonicalIdentifiers.Value}
 			concept.APIURL = mapper.APIURL(neoCon.PrefUUID, neoCon.canonicalTypes, env)
 		} else {
 			log.Debugf("Old concept model with UUID: %v", neoCon.UUID)
 			concept.ID = mapper.IDURL(neoCon.UUID)
-			con.Identifier = Identifier{Authority: mapNeoLabelsToAuthorityValue(neoCon.NeoIdentifier.Labels), IdentifierValue: neoCon.NeoIdentifier.Value}
 			concept.APIURL = mapper.APIURL(neoCon.UUID, neoCon.Types, env)
 		}
-
+		con.Identifier = Identifier{Authority: mapNeoLabelsToAuthorityValue(neoCon.NeoIdentifier.Labels), IdentifierValue: neoCon.NeoIdentifier.Value}
 		con.Concept = concept
 		concordances.Concordance = append(concordances.Concordance, con)
 	}
