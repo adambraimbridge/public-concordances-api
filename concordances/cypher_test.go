@@ -12,15 +12,18 @@ import (
 	"github.com/Financial-Times/organisations-rw-neo4j/organisations"
 	"github.com/jmcvetta/neoism"
 	"github.com/stretchr/testify/assert"
+	"github.com/coreos/fleet/log"
 )
 
 func TestNeoReadByConceptID_NewModel_Unconcorded(t *testing.T) {
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
-	conceptRW, organisationRW := getServices(t, assert, db)
+
+	conceptRW := concepts.NewConceptService(db)
+	assert.NoError(conceptRW.Initialise())
 
 	writeJSONToService(conceptRW, "./fixtures/Brand-Unconcorded-ad56856a-7d38-48e2-a131-7d104f17e8f6.json", assert)
-	defer deleteAllViaService(assert, db, organisationRW)
+	defer cleanUp(assert, db)
 
 	undertest := NewCypherDriver(db, "prod")
 	conc, found, err := undertest.ReadByConceptID([]string{"ad56856a-7d38-48e2-a131-7d104f17e8f6"})
@@ -32,10 +35,11 @@ func TestNeoReadByConceptID_NewModel_Unconcorded(t *testing.T) {
 func TestNeoReadByConceptID_NewModel_Concorded(t *testing.T) {
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
-	conceptRW, organisationRW := getServices(t, assert, db)
+	conceptRW := concepts.NewConceptService(db)
+	assert.NoError(conceptRW.Initialise())
 
 	writeJSONToService(conceptRW, "./fixtures/Brand-Concorded-b20801ac-5a76-43cf-b816-8c3b2f7133ad.json", assert)
-	defer deleteAllViaService(assert, db, organisationRW)
+	defer cleanUp(assert, db)
 
 	undertest := NewCypherDriver(db, "prod")
 	conc, found, err := undertest.ReadByConceptID([]string{"b20801ac-5a76-43cf-b816-8c3b2f7133ad"})
@@ -44,13 +48,35 @@ func TestNeoReadByConceptID_NewModel_Concorded(t *testing.T) {
 	assert.Equal(2, len(conc.Concordance))
 }
 
+func TestNeoReadByConceptID_NewModel_And_OldModel(t *testing.T) {
+	assert := assert.New(t)
+	db := getDatabaseConnection(t, assert)
+	conceptRW := concepts.NewConceptService(db)
+	assert.NoError(conceptRW.Initialise())
+	organisationRW := organisations.NewCypherOrganisationService(db)
+	assert.NoError(organisationRW.Initialise())
+
+	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
+	writeJSONToService(conceptRW, "./fixtures/Brand-Concorded-b20801ac-5a76-43cf-b816-8c3b2f7133ad.json", assert)
+
+	defer cleanUp(assert, db)
+
+	undertest := NewCypherDriver(db, "prod")
+	conc, found, err := undertest.ReadByConceptID([]string{"b20801ac-5a76-43cf-b816-8c3b2f7133ad", "f21a5cc0-d326-4e62-b84a-d840c2209fee"})
+	assert.NoError(err)
+	assert.True(found)
+	log.Infof("Concordances: \n %v", conc)
+	assert.Equal(4, len(conc.Concordance))
+}
+
 func TestNeoReadByAuthority_NewModel_Unconcorded(t *testing.T) {
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
-	conceptRW, organisationRW := getServices(t, assert, db)
+	conceptRW := concepts.NewConceptService(db)
+	assert.NoError(conceptRW.Initialise())
 
 	writeJSONToService(conceptRW, "./fixtures/Brand-Unconcorded-ad56856a-7d38-48e2-a131-7d104f17e8f6.json", assert)
-	defer deleteAllViaService(assert, db, organisationRW)
+	defer cleanUp(assert, db)
 
 	undertest := NewCypherDriver(db, "prod")
 	conc, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FT-TME", []string{"UGFydHkgcGVvcGxl-QnJhbmRz"})
@@ -62,10 +88,11 @@ func TestNeoReadByAuthority_NewModel_Unconcorded(t *testing.T) {
 func TestNeoReadByAuthority_NewModel_Concorded(t *testing.T) {
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
-	conceptRW, organisationRW := getServices(t, assert, db)
+	conceptRW := concepts.NewConceptService(db)
+	assert.NoError(conceptRW.Initialise())
 
 	writeJSONToService(conceptRW, "./fixtures/Brand-Concorded-b20801ac-5a76-43cf-b816-8c3b2f7133ad.json", assert)
-	defer deleteAllViaService(assert, db, organisationRW)
+	defer cleanUp(assert, db)
 
 	undertest := NewCypherDriver(db, "prod")
 	conc, found, err := undertest.ReadByAuthority("http://api.ft.com/system/SMARTLOGIC", []string{"b20801ac-5a76-43cf-b816-8c3b2f7133ad"})
@@ -74,15 +101,35 @@ func TestNeoReadByAuthority_NewModel_Concorded(t *testing.T) {
 	assert.Equal(1, len(conc.Concordance))
 }
 
-func TestNeoReadByConceptIDToConcordancesMandatoryFields(t *testing.T) {
-
+func TestNeoReadByAuthority_NewModel_And_OldModel(t *testing.T) {
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
+	conceptRW := concepts.NewConceptService(db)
+	assert.NoError(conceptRW.Initialise())
+	organisationRW := organisations.NewCypherOrganisationService(db)
+	assert.NoError(organisationRW.Initialise())
 
-	_, organisationRW := getServices(t, assert, db)
+	writeJSONToService(organisationRW, "./fixtures/Organisation-Main-3e844449-b27f-40d4-b696-2ce9b6137133.json", assert)
+	writeJSONToService(conceptRW, "./fixtures/Brand-Concorded-b20801ac-5a76-43cf-b816-8c3b2f7133ad.json", assert)
+
+	defer cleanUp(assert, db)
+
+	undertest := NewCypherDriver(db, "prod")
+	conc, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FT-TME", []string{"TnN0ZWluX09OX0ZvcnR1bmVDb21wYW55X05XUw==-T04=", "VGhlIFJvbWFu-QnJhbmRz"})
+	assert.NoError(err)
+	assert.True(found)
+	assert.Equal(2, len(conc.Concordance))
+}
+
+func TestNeoReadByConceptIDToConcordancesMandatoryFields(t *testing.T) {
+	assert := assert.New(t)
+	db := getDatabaseConnection(t, assert)
+	organisationRW := organisations.NewCypherOrganisationService(db)
+	assert.NoError(organisationRW.Initialise())
+
 	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
 
-	defer deleteAllViaService(assert, db, organisationRW)
+	defer cleanUp(assert, db)
 
 	undertest := NewCypherDriver(db, "prod")
 	cs, found, err := undertest.ReadByConceptID([]string{"f21a5cc0-d326-4e62-b84a-d840c2209fee"})
@@ -93,14 +140,15 @@ func TestNeoReadByConceptIDToConcordancesMandatoryFields(t *testing.T) {
 }
 
 func TestNeoReadByAuthorityToConcordancesMandatoryFields(t *testing.T) {
-
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
 
-	_, organisationRW := getServices(t, assert, db)
+	organisationRW := organisations.NewCypherOrganisationService(db)
+	assert.NoError(organisationRW.Initialise())
+
 	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
 
-	defer deleteAllViaService(assert, db, organisationRW)
+	defer cleanUp(assert, db)
 
 	undertest := NewCypherDriver(db, "prod")
 	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FACTSET", []string{"003JLG-E"})
@@ -111,14 +159,15 @@ func TestNeoReadByAuthorityToConcordancesMandatoryFields(t *testing.T) {
 }
 
 func TestNeoReadByAuthorityOnlyOneConcordancePerIdentifierValue(t *testing.T) {
-
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
 
-	_, organisationRW := getServices(t, assert, db)
+	organisationRW := organisations.NewCypherOrganisationService(db)
+	assert.NoError(organisationRW.Initialise())
+
 	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
 
-	defer deleteAllViaService(assert, db, organisationRW)
+	defer cleanUp(assert, db)
 
 	undertest := NewCypherDriver(db, "prod")
 	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FACTSET", []string{"003JLG-E"})
@@ -133,10 +182,12 @@ func TestNeoReadByConceptIdReturnMultipleConcordancesForMultipleIdentifiers(t *t
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
 
-	_, organisationRW := getServices(t, assert, db)
+	organisationRW := organisations.NewCypherOrganisationService(db)
+	assert.NoError(organisationRW.Initialise())
+
 	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
 
-	defer deleteAllViaService(assert, db, organisationRW)
+	defer cleanUp(assert, db)
 
 	undertest := NewCypherDriver(db, "prod")
 	cs, found, err := undertest.ReadByConceptID([]string{"f21a5cc0-d326-4e62-b84a-d840c2209fee"})
@@ -152,10 +203,12 @@ func TestNeoReadByAuthorityEmptyConcordancesWhenUnsupportedAuthority(t *testing.
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
 
-	_, organisationRW := getServices(t, assert, db)
+	organisationRW := organisations.NewCypherOrganisationService(db)
+	assert.NoError(organisationRW.Initialise())
+
 	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
 
-	defer deleteAllViaService(assert, db, organisationRW)
+	defer cleanUp(assert, db)
 
 	undertest := NewCypherDriver(db, "prod")
 	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/UnsupportedAuthority", []string{"DANMUR-1"})
@@ -163,14 +216,6 @@ func TestNeoReadByAuthorityEmptyConcordancesWhenUnsupportedAuthority(t *testing.
 	assert.False(found)
 	assert.Empty(cs.Concordance)
 	cleanUpParentOrgAndUppIdentifier(db, t, assert)
-}
-
-func getServices(t *testing.T, assert *assert.Assertions, db neoutils.NeoConnection) (baseftrwapp.Service, baseftrwapp.Service) {
-	conceptRW := concepts.NewConceptService(db)
-	assert.NoError(conceptRW.Initialise())
-	organisationRW := organisations.NewCypherOrganisationService(db)
-	assert.NoError(organisationRW.Initialise())
-	return conceptRW, organisationRW
 }
 
 func getDatabaseConnection(t *testing.T, assert *assert.Assertions) neoutils.NeoConnection {
@@ -196,11 +241,16 @@ func writeJSONToService(service baseftrwapp.Service, pathToJSONFile string, asse
 	assert.NoError(errrr)
 }
 
-func deleteAllViaService(assert *assert.Assertions, db neoutils.NeoConnection, organisationRW baseftrwapp.Service) {
-	organisationRW.Delete("f21a5cc0-d326-4e62-b84a-d840c2209fee", "test_transaction_id")
+func cleanUp(assert *assert.Assertions, db neoutils.NeoConnection) {
 
 	qs := []*neoism.CypherQuery{
 		{
+			Statement: fmt.Sprintf("MATCH (a:Thing {uuid: '%s'})--(i:Identifier) DETACH DELETE i, a", "3e844449-b27f-40d4-b696-2ce9b6137133"),
+		}, {
+			Statement: fmt.Sprintf("MATCH (a:Thing {uuid: '%s'})--(i:Identifier) DETACH DELETE i, a", "f21a5cc0-d326-4e62-b84a-d840c2209fee"),
+		}, {
+			Statement: fmt.Sprintf("MATCH (a:Thing {uuid: '%s'})--(i:Identifier) DETACH DELETE i, a",  "f9694ba7-eab0-4ce0-8e01-ff64bccb813c"),
+		}, {
 			Statement: fmt.Sprintf("MATCH (t:Thing {uuid: '%v'})--(i:Identifier) OPTIONAL MATCH (t)-[:EQUIVALENT_TO]-(e:Thing) DETACH DELETE t, i", "70f4732b-7f7d-30a1-9c29-0cceec23760e"),
 		}, {
 			Statement: fmt.Sprintf("MATCH (t:Thing {uuid: '%v'})--(i:Identifier) OPTIONAL MATCH (t)-[:EQUIVALENT_TO]-(e:Thing) DETACH DELETE t, e, i", "b20801ac-5a76-43cf-b816-8c3b2f7133ad"),
