@@ -1,0 +1,24 @@
+# Default values for public-concordances-api.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+service:
+  name: "" # The name of the service, should be defined in the specific app-configs folder.
+  hasHealthcheck: "true"
+replicaCount: 2
+image:
+  repository: coco/public-concordances-api
+  pullPolicy: IfNotPresent
+env:
+  app:
+    port: "8080"
+  graphite:
+    prefix: "coco.services.k8s.public-concordances-api"
+  log:
+    metrics: "false"
+  cache:
+    duration: "10m"
+resources:
+  limits:
+    memory: 256Mi
+
+
