@@ -26,7 +26,7 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         env: 
         - name: APP_PORT
-          value: {{ .Values.env.app.port }}
+          value: "{{ .Values.env.app.port }}"
         - name: GRAPHITE_ADDRESS
           valueFrom:
             configMapKeyRef:
@@ -47,7 +47,7 @@ spec:
         - containerPort: {{ .Values.env.app.port }} 
         livenessProbe: 
           tcpSocket: 
-            port: {{ .Values.env.app.port }} 
+            port: {{ .Values.env.app.port }}
           initialDelaySeconds: 10 
         readinessProbe: 
           httpGet: 
