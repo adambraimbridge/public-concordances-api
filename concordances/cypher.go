@@ -33,9 +33,9 @@ func (pcw CypherDriver) CheckConnectivity() error {
 }
 
 type neoReadStruct struct {
-	UUID        string        `json:"UUID"`
-	Types       []string      `json:"types"`
-	Identifiers neoIdentifier `json:"identifiers"`
+	UUID       string        `json:"uuid"`
+	Types      []string      `json:"types"`
+	Identifier neoIdentifier `json:"identifier"`
 }
 
 type neoIdentifier struct {
@@ -53,8 +53,8 @@ func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Conc
 		OPTIONAL MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
 		OPTIONAL MATCH (leafNode:Concept)-[:EQUIVALENT_TO]->(canonical)
 		OPTIONAL MATCH (leafNode)<-[:IDENTIFIES]-(leafId:Identifier)
-		WITH COALESCE(canonical.prefUUID, p.uuid) AS UUID, COALESCE(labels(canonical), labels(p)) AS types, COALESCE(leafId, ids) as nodeIds
-		RETURN DISTINCT UUID, types, {labels:labels(nodeIds), value:nodeIds.value} as identifiers
+		WITH COALESCE(canonical.prefUUID, p.uuid) AS uuid, COALESCE(labels(canonical), labels(p)) AS types, COALESCE(leafId, ids) as nodeIds
+		RETURN DISTINCT uuid, types, {labels:labels(nodeIds), value:nodeIds.value} as identifier
         `,
 		Parameters: neoism.Props{"identifiers": identifiers},
 		Result:     &results,
@@ -91,7 +91,7 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 		MATCH (p:Concept)<-[:IDENTIFIES]-(ids:Identifier:%s)
  		WHERE ids.value in {identifierValues}
 		OPTIONAL MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
-		RETURN COALESCE(canonical.prefUUID, p.uuid) AS UUID, COALESCE(labels(canonical), labels(p)) AS types, {labels:labels(ids), value:ids.value} as identifiers`, authorityLabel),
+		RETURN COALESCE(canonical.prefUUID, p.uuid) AS uuid, COALESCE(labels(canonical), labels(p)) AS types, {labels:labels(ids), value:ids.value} as identifier`, authorityLabel),
 
 		Parameters: neoism.Props{
 			"identifierValues": identifierValues,
@@ -143,7 +143,7 @@ func neoReadStructToConcordances(neo []neoReadStruct, env string) (concordances 
 
 		concept.ID = mapper.IDURL(neoCon.UUID)
 		concept.APIURL = mapper.APIURL(neoCon.UUID, neoCon.Types, env)
-		con.Identifier = Identifier{Authority: mapNeoLabelsToAuthorityValue(neoCon.Identifiers.Labels), IdentifierValue: neoCon.Identifiers.Value}
+		con.Identifier = Identifier{Authority: mapNeoLabelsToAuthorityValue(neoCon.Identifier.Labels), IdentifierValue: neoCon.Identifier.Value}
 
 		con.Concept = concept
 		concordances.Concordance = append(concordances.Concordance, con)
