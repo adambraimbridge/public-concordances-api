@@ -346,26 +346,23 @@ func TestNeoReadByAuthorityEmptyConcordancesWhenUnsupportedAuthority(t *testing.
 }
 
 func readConceptAndCompare(t *testing.T, expected Concordances, actual Concordances, testName string) {
-	sort.SliceStable(expected.Concordance, func(i, j int) bool {
-		return expected.Concordance[i].Concept.ID < expected.Concordance[j].Concept.ID
-	})
-	sort.SliceStable(expected.Concordance, func(i, j int) bool {
-		return expected.Concordance[i].Identifier.Authority < expected.Concordance[j].Identifier.Authority
-	})
-	sort.SliceStable(expected.Concordance, func(i, j int) bool {
-		return expected.Concordance[i].Identifier.IdentifierValue < expected.Concordance[j].Identifier.IdentifierValue
-	})
 
-	sort.SliceStable(actual.Concordance, func(i, j int) bool {
-		return actual.Concordance[i].Concept.ID < actual.Concordance[j].Concept.ID
-	})
-	sort.SliceStable(actual.Concordance, func(i, j int) bool {
-		return actual.Concordance[i].Identifier.Authority < actual.Concordance[j].Identifier.Authority
-	})
-	sort.SliceStable(actual.Concordance, func(i, j int) bool {
-		return actual.Concordance[i].Identifier.IdentifierValue < actual.Concordance[j].Identifier.IdentifierValue
-	})
+	fullConcordanceSort(expected.Concordance)
+	fullConcordanceSort(actual.Concordance)
+
 	assert.True(t, reflect.DeepEqual(expected, actual), fmt.Sprintf("Actual aggregated concept differs from expected: Test: %v \n Expected: %v \n Actual: %v", testName, expected, actual))
+}
+
+func fullConcordanceSort(concordanceList []Concordance) {
+	sort.SliceStable(concordanceList, func(i, j int) bool {
+		return concordanceList[i].Concept.ID < concordanceList[j].Concept.ID
+	})
+	sort.SliceStable(concordanceList, func(i, j int) bool {
+		return concordanceList[i].Identifier.Authority < concordanceList[j].Identifier.Authority
+	})
+	sort.SliceStable(concordanceList, func(i, j int) bool {
+		return concordanceList[i].Identifier.IdentifierValue < concordanceList[j].Identifier.IdentifierValue
+	})
 }
 
 func getDatabaseConnection(t *testing.T, assert *assert.Assertions) neoutils.NeoConnection {
