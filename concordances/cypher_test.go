@@ -347,13 +347,13 @@ func TestNeoReadByAuthorityEmptyConcordancesWhenUnsupportedAuthority(t *testing.
 
 func readConceptAndCompare(t *testing.T, expected Concordances, actual Concordances, testName string) {
 
-	fullConcordanceSort(expected.Concordance)
-	fullConcordanceSort(actual.Concordance)
+	sortConcordances(expected.Concordance)
+	sortConcordances(actual.Concordance)
 
 	assert.True(t, reflect.DeepEqual(expected, actual), fmt.Sprintf("Actual aggregated concept differs from expected: Test: %v \n Expected: %v \n Actual: %v", testName, expected, actual))
 }
 
-func fullConcordanceSort(concordanceList []Concordance) {
+func sortConcordances(concordanceList []Concordance) {
 	sort.SliceStable(concordanceList, func(i, j int) bool {
 		return concordanceList[i].Concept.ID < concordanceList[j].Concept.ID
 	})
