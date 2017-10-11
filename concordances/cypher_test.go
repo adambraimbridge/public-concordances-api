@@ -8,13 +8,14 @@ import (
 
 	"reflect"
 
+	"sort"
+
 	"github.com/Financial-Times/base-ft-rw-app-go/baseftrwapp"
 	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/Financial-Times/organisations-rw-neo4j/organisations"
 	"github.com/jmcvetta/neoism"
 	"github.com/stretchr/testify/assert"
-	"sort"
 )
 
 var concordedBrandSmartlogic = Concordance{
@@ -26,6 +27,15 @@ var concordedBrandSmartlogic = Concordance{
 		IdentifierValue: "b20801ac-5a76-43cf-b816-8c3b2f7133ad"},
 }
 
+var concordedBrandSmartlogicUPP = Concordance{
+	Concept{
+		ID:     "http://api.ft.com/things/b20801ac-5a76-43cf-b816-8c3b2f7133ad",
+		APIURL: "http://api.ft.com/brands/b20801ac-5a76-43cf-b816-8c3b2f7133ad"},
+	Identifier{
+		Authority:       "http://api.ft.com/system/UPP",
+		IdentifierValue: "b20801ac-5a76-43cf-b816-8c3b2f7133ad"},
+}
+
 var concordedBrandTME = Concordance{
 	Concept{
 		ID:     "http://api.ft.com/things/b20801ac-5a76-43cf-b816-8c3b2f7133ad",
@@ -33,6 +43,15 @@ var concordedBrandTME = Concordance{
 	Identifier{
 		Authority:       "http://api.ft.com/system/FT-TME",
 		IdentifierValue: "VGhlIFJvbWFu-QnJhbmRz"},
+}
+
+var concordedBrandTMEUPP = Concordance{
+	Concept{
+		ID:     "http://api.ft.com/things/b20801ac-5a76-43cf-b816-8c3b2f7133ad",
+		APIURL: "http://api.ft.com/brands/b20801ac-5a76-43cf-b816-8c3b2f7133ad"},
+	Identifier{
+		Authority:       "http://api.ft.com/system/UPP",
+		IdentifierValue: "70f4732b-7f7d-30a1-9c29-0cceec23760e"},
 }
 
 var mainOrganisationLEI = Concordance{
@@ -53,6 +72,15 @@ var childOrganisationFactset = Concordance{
 		IdentifierValue: "003JLG-E"},
 }
 
+var childOrganisationFactsetUPP = Concordance{
+	Concept{
+		ID:     "http://api.ft.com/things/f21a5cc0-d326-4e62-b84a-d840c2209fee",
+		APIURL: "http://api.ft.com/organisations/f21a5cc0-d326-4e62-b84a-d840c2209fee"},
+	Identifier{
+		Authority:       "http://api.ft.com/system/UPP",
+		IdentifierValue: "f21a5cc0-d326-4e62-b84a-d840c2209fee"},
+}
+
 var childOrganisationLEI = Concordance{
 	Concept{
 		ID:     "http://api.ft.com/things/f21a5cc0-d326-4e62-b84a-d840c2209fee",
@@ -71,6 +99,15 @@ var mainOrganisationTME = Concordance{
 		IdentifierValue: "TnN0ZWluX09OX0ZvcnR1bmVDb21wYW55X05XUw==-T04="},
 }
 
+var mainOrganisationTMEUPP = Concordance{
+	Concept{
+		ID:     "http://api.ft.com/things/3e844449-b27f-40d4-b696-2ce9b6137133",
+		APIURL: "http://api.ft.com/organisations/3e844449-b27f-40d4-b696-2ce9b6137133"},
+	Identifier{
+		Authority:       "http://api.ft.com/system/UPP",
+		IdentifierValue: "TnN0ZWluX09OX0ZvcnR1bmVDb21wYW55X05XUw==-T04="},
+}
+
 var unconcordedBrandTME = Concordance{
 	Concept{
 		ID:     "http://api.ft.com/things/ad56856a-7d38-48e2-a131-7d104f17e8f6",
@@ -78,6 +115,15 @@ var unconcordedBrandTME = Concordance{
 	Identifier{
 		Authority:       "http://api.ft.com/system/FT-TME",
 		IdentifierValue: "UGFydHkgcGVvcGxl-QnJhbmRz"},
+}
+
+var unconcordedBrandTMEUPP = Concordance{
+	Concept{
+		ID:     "http://api.ft.com/things/ad56856a-7d38-48e2-a131-7d104f17e8f6",
+		APIURL: "http://api.ft.com/brands/ad56856a-7d38-48e2-a131-7d104f17e8f6"},
+	Identifier{
+		Authority:       "http://api.ft.com/system/UPP",
+		IdentifierValue: "ad56856a-7d38-48e2-a131-7d104f17e8f6"},
 }
 
 func TestNeoReadByConceptID_NewModel_Unconcorded(t *testing.T) {
@@ -94,9 +140,9 @@ func TestNeoReadByConceptID_NewModel_Unconcorded(t *testing.T) {
 	conc, found, err := undertest.ReadByConceptID([]string{"ad56856a-7d38-48e2-a131-7d104f17e8f6"})
 	assert.NoError(err)
 	assert.True(found)
-	assert.Equal(1, len(conc.Concordance))
+	assert.Equal(2, len(conc.Concordance))
 
-	readConceptAndCompare(t, Concordances{[]Concordance{unconcordedBrandTME}}, conc, "TestNeoReadByConceptID_NewModel_Unconcorded")
+	readConceptAndCompare(t, Concordances{[]Concordance{unconcordedBrandTME, unconcordedBrandTMEUPP}}, conc, "TestNeoReadByConceptID_NewModel_Unconcorded")
 }
 
 func TestNeoReadByConceptID_NewModel_Concorded(t *testing.T) {
@@ -112,9 +158,9 @@ func TestNeoReadByConceptID_NewModel_Concorded(t *testing.T) {
 	conc, found, err := undertest.ReadByConceptID([]string{"b20801ac-5a76-43cf-b816-8c3b2f7133ad"})
 	assert.NoError(err)
 	assert.True(found)
-	assert.Equal(2, len(conc.Concordance))
+	assert.Equal(4, len(conc.Concordance))
 
-	readConceptAndCompare(t, Concordances{[]Concordance{concordedBrandSmartlogic, concordedBrandTME}}, conc, "TestNeoReadByConceptID_NewModel_Concorded")
+	readConceptAndCompare(t, Concordances{[]Concordance{concordedBrandSmartlogic, concordedBrandSmartlogicUPP, concordedBrandTME, concordedBrandTMEUPP}}, conc, "TestNeoReadByConceptID_NewModel_Concorded")
 }
 
 func TestNeoReadByConceptID_NewModel_And_OldModel(t *testing.T) {
@@ -134,9 +180,9 @@ func TestNeoReadByConceptID_NewModel_And_OldModel(t *testing.T) {
 	conc, found, err := undertest.ReadByConceptID([]string{"b20801ac-5a76-43cf-b816-8c3b2f7133ad", "f21a5cc0-d326-4e62-b84a-d840c2209fee"})
 	assert.NoError(err)
 	assert.True(found)
-	assert.Equal(4, len(conc.Concordance))
+	assert.Equal(7, len(conc.Concordance))
 
-	sliceConcordances := []Concordance{childOrganisationFactset, childOrganisationLEI, concordedBrandTME, concordedBrandSmartlogic}
+	sliceConcordances := []Concordance{childOrganisationFactset, childOrganisationFactsetUPP, childOrganisationLEI, concordedBrandTME, concordedBrandTMEUPP, concordedBrandSmartlogic, concordedBrandSmartlogicUPP}
 	readConceptAndCompare(t, Concordances{sliceConcordances}, conc, "TestNeoReadByConceptID_NewModel_And_OldModel")
 }
 
@@ -215,7 +261,7 @@ func TestNeoReadByConceptIDToConcordancesMandatoryFields(t *testing.T) {
 	assert.True(found)
 	assert.NotEmpty(cs.Concordance)
 
-	readConceptAndCompare(t, Concordances{[]Concordance{childOrganisationFactset, childOrganisationLEI}}, cs, "TestNeoReadByConceptIDToConcordancesMandatoryFields")
+	readConceptAndCompare(t, Concordances{[]Concordance{childOrganisationFactset, childOrganisationFactsetUPP, childOrganisationLEI}}, cs, "TestNeoReadByConceptIDToConcordancesMandatoryFields")
 }
 
 func TestNeoReadByAuthorityToConcordancesMandatoryFields(t *testing.T) {
@@ -276,9 +322,9 @@ func TestNeoReadByConceptIdReturnMultipleConcordancesForMultipleIdentifiers(t *t
 	assert.NoError(err)
 	assert.True(found)
 	assert.NotEmpty(cs.Concordance)
-	assert.Equal(len(cs.Concordance), 2)
+	assert.Equal(3, len(cs.Concordance))
 
-	readConceptAndCompare(t, Concordances{[]Concordance{childOrganisationFactset, childOrganisationLEI}}, cs, "TestNeoReadByConceptIdReturnMultipleConcordancesForMultipleIdentifiers")
+	readConceptAndCompare(t, Concordances{[]Concordance{childOrganisationFactset, childOrganisationFactsetUPP, childOrganisationLEI}}, cs, "TestNeoReadByConceptIdReturnMultipleConcordancesForMultipleIdentifiers")
 }
 
 func TestNeoReadByAuthorityEmptyConcordancesWhenUnsupportedAuthority(t *testing.T) {
@@ -300,20 +346,23 @@ func TestNeoReadByAuthorityEmptyConcordancesWhenUnsupportedAuthority(t *testing.
 }
 
 func readConceptAndCompare(t *testing.T, expected Concordances, actual Concordances, testName string) {
-	sort.Slice(expected.Concordance, func(i, j int) bool {
-		return expected.Concordance[i].Concept.ID < expected.Concordance[j].Concept.ID
-	})
-	sort.Slice(expected.Concordance, func(i, j int) bool {
-		return expected.Concordance[i].Identifier.IdentifierValue < expected.Concordance[j].Identifier.IdentifierValue
-	})
 
-	sort.Slice(actual.Concordance, func(i, j int) bool {
-		return actual.Concordance[i].Concept.ID < actual.Concordance[j].Concept.ID
-	})
-	sort.Slice(actual.Concordance, func(i, j int) bool {
-		return actual.Concordance[i].Identifier.IdentifierValue < actual.Concordance[j].Identifier.IdentifierValue
-	})
+	sortConcordances(expected.Concordance)
+	sortConcordances(actual.Concordance)
+
 	assert.True(t, reflect.DeepEqual(expected, actual), fmt.Sprintf("Actual aggregated concept differs from expected: Test: %v \n Expected: %v \n Actual: %v", testName, expected, actual))
+}
+
+func sortConcordances(concordanceList []Concordance) {
+	sort.SliceStable(concordanceList, func(i, j int) bool {
+		return concordanceList[i].Concept.ID < concordanceList[j].Concept.ID
+	})
+	sort.SliceStable(concordanceList, func(i, j int) bool {
+		return concordanceList[i].Identifier.Authority < concordanceList[j].Identifier.Authority
+	})
+	sort.SliceStable(concordanceList, func(i, j int) bool {
+		return concordanceList[i].Identifier.IdentifierValue < concordanceList[j].Identifier.IdentifierValue
+	})
 }
 
 func getDatabaseConnection(t *testing.T, assert *assert.Assertions) neoutils.NeoConnection {
