@@ -2,7 +2,6 @@ package concordances
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 
@@ -11,7 +10,8 @@ import (
 
 	"time"
 
-	"github.com/Financial-Times/go-fthealth/v1a"
+	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
+	"github.com/Financial-Times/service-status-go/gtg"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -20,15 +20,25 @@ var ConcordanceDriver Driver
 var CacheControlHeader string
 var connCheck error
 
-// HealthCheck does something
-func HealthCheck() v1a.Check {
-	return v1a.Check{
-		BusinessImpact:   "Unable to respond to Public Concordances api requests",
-		Name:             "Check connectivity to Neo4j - neoUrl is a parameter in hieradata for this service",
-		PanicGuide:       "https://sites.google.com/a/ft.com/ft-technology-service-transition/home/run-book-library/public-concordances-api",
-		Severity:         1,
-		TechnicalSummary: "Cannot connect to Neo4j a instance with at least one concordance loaded in it",
-		Checker:          Checker,
+// HealthCheck provides an FT standard timed healthcheck for the /__health endpoint
+func HealthCheck() fthealth.TimedHealthCheck {
+	return fthealth.TimedHealthCheck{
+		HealthCheck: fthealth.HealthCheck{
+			SystemCode:  "public-concordances-api",
+			Name:        "public-concordances-api",
+			Description: "Concords concept identifiers",
+			Checks: []fthealth.Check{
+				{
+					BusinessImpact:   "Unable to respond to Public Concordances API requests",
+					Name:             "Check connectivity to Neo4j",
+					PanicGuide:       "https://dewey.in.ft.com/view/system/public-concordances-api",
+					Severity:         1,
+					TechnicalSummary: "Cannot connect to Neo4j a instance with at least one concordance loaded in it",
+					Checker:          Checker,
+				},
+			},
+		},
+		Timeout: 10 * time.Second,
 	}
 }
 
@@ -49,16 +59,12 @@ func Checker() (string, error) {
 	return "Error connecting to neo4j", connCheck
 }
 
-//GoodToGo returns a 503 if the healthcheck fails - suitable for use from varnish to check availability of a node
-func GoodToGo(writer http.ResponseWriter, req *http.Request) {
+// GTG lightly checks the application and conforms to the FT standard GTG format
+func GTG() gtg.Status {
 	if _, err := Checker(); err != nil {
-		writer.WriteHeader(http.StatusServiceUnavailable)
+		return gtg.Status{GoodToGo: false, Message: err.Error()}
 	}
-}
-
-// BuildInfoHandler - This is a stop gap and will be added to when we can define what we should display here
-func BuildInfoHandler(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "build-info")
+	return gtg.Status{GoodToGo: true}
 }
 
 // GetConcordances is the public API
