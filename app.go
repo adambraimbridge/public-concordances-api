@@ -142,6 +142,7 @@ func runServer(neoURL string, port string, cacheDuration string, env string, hea
 
 	mh := &handlers.MethodHandler{
 		"GET": http.HandlerFunc(concordances.GetConcordances),
+		"POST": http.HandlerFunc(concordances.PostConcordances),
 	}
 	servicesRouter.Handle("/concordances", mh)
 
@@ -163,5 +164,4 @@ func runServer(neoURL string, port string, cacheDuration string, env string, hea
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatalf("Unable to start server: %v", err)
 	}
-
 }
