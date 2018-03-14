@@ -14,7 +14,6 @@ import (
 	"github.com/Financial-Times/service-status-go/gtg"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
-	"github.com/Financial-Times/transactionid-utils-go"
 )
 
 // ConcordanceDriver for cypher queries
