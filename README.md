@@ -22,30 +22,6 @@ Alternatively, use socks proxy to forward to tunnel url via ssh and hit a cluste
 * `ssh -L 1234:localhost:8080 core@{cluster}.ft.com` Maps your local port 1234 to the cluster's port 8080(vulcan)
 * `$GOPATH/bin/public-concordances-api --neo-url=http://localhost:{your port}/__neo4j-{red/blue}/db/data --port={port}` 
 
-## Deployment to UCS
-* http://ftjen10085-lvpr-uk-p:8181/view/JOBS-public-concordances-api/
-### Build master and package puppet-module
-* [Build and publish to forge](http://ftjen10085-lvpr-uk-p:8181/job/public-concordances-api-build)
-
-### Deploy to UCS TEST/PROD environments
-#### Promotion to TEST will be triggered automatically
-* [Deploy to Test](http://ftjen10085-lvpr-uk-p:8181/view/JOBS-public-concordances-api/job/public-concordances-api-deploy-test/)
-#### Promotion to PROD has to be approved, using the Promotion Feature, available in each version built (see lower left)
-* [Deploy to Prod](http://ftjen10085-lvpr-uk-p:8181/view/JOBS-public-concordances-api/job/public-concordances-api-deploy-to-prod/)
-
-## Deployment to CoCo
-- This service should be deployed in the delivery clusters.
-- Read detailed explanation of the [CoCo Environments] (https://sites.google.com/a/ft.com/technology/systems/dynamic-semantic-publishing/coco/environments)
-- Follow instructions on how to deploy outlined in the [Coco Deployment Process document] (https://sites.google.com/a/ft.com/technology/systems/dynamic-semantic-publishing/coco/deploy-process)
-
-#### Steps:
-- update version in [github/FinancialTimes/up-service-files/services.yaml] (https://github.com/Financial-Times/up-service-files/blob/master/services.yaml)  
-
-- if necessary update: 
-     - [public-concordances-api@.service] (https://github.com/Financial-Times/up-service-files/blob/master/public-concordances-api%40.service)
-     - [public-concordances-api-sidekick@.service] (https://github.com/Financial-Times/up-service-files/blob/master/public-concordances-api-sidekick%40.service)
-        
-
 ## API Endpoints
 Based on the following [google doc](https://docs.google.com/a/ft.com/document/d/1onyyb-XoByB00RQNZvjNoL_IsO_eHKe-vOpUuAVHyJE)
 
