@@ -30,6 +30,15 @@ var concordedBrandSmartlogic = Concordance{
 		IdentifierValue: "b20801ac-5a76-43cf-b816-8c3b2f7133ad"},
 }
 
+var concordedBrandManagedLocation = Concordance{
+	Concept{
+		ID:     "http://api.ft.com/things/b20801ac-5a76-43cf-b816-8c3b2f7133ad",
+		APIURL: "http://api.ft.com/brands/b20801ac-5a76-43cf-b816-8c3b2f7133ad"},
+	Identifier{
+		Authority:       "http://api.ft.com/system/ManagedLocation",
+		IdentifierValue: "b20801ac-5a76-43cf-b816-8c3b2f7133ad"},
+}
+
 var concordedBrandSmartlogicUPP = Concordance{
 	Concept{
 		ID:     "http://api.ft.com/things/b20801ac-5a76-43cf-b816-8c3b2f7133ad",
@@ -247,6 +256,25 @@ func TestNeoReadByAuthority_NewModel_Concorded(t *testing.T) {
 	assert.Equal(1, len(conc.Concordance))
 
 	readConceptAndCompare(t, Concordances{[]Concordance{concordedBrandSmartlogic}}, conc, "TestNeoReadByAuthority_NewModel_Concorded")
+}
+
+
+func TestNeoReadByAuthority_ManagedLocation(t *testing.T) {
+	assert := assert.New(t)
+	db := getDatabaseConnection(t, assert)
+	conceptRW := concepts.NewConceptService(db)
+	assert.NoError(conceptRW.Initialise())
+
+	writeGenericConceptJSONToService(conceptRW, "./fixtures/ManagedLocation-Concorded-5aba454b-3e31-31b9-bdeb-0caf83f62b44.json", assert)
+	defer cleanUp(assert, db)
+
+	undertest := NewCypherDriver(db, "prod")
+	conc, found, err := undertest.ReadByAuthority("http://api.ft.com/system/ManagedLocation", []string{"5aba454b-3e31-31b9-bdeb-0caf83f62b44"})
+	assert.NoError(err)
+	assert.True(found)
+	assert.Equal(1, len(conc.Concordance))
+
+	readConceptAndCompare(t, Concordances{[]Concordance{concordedBrandManagedLocation}}, conc, "TestNeoReadByAuthority_ManagedLocation")
 }
 
 func TestNeoReadByConceptIDToConcordancesMandatoryFields(t *testing.T) {
