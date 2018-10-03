@@ -30,7 +30,7 @@ var concordedBrandSmartlogic = Concordance{
 		IdentifierValue: "b20801ac-5a76-43cf-b816-8c3b2f7133ad"},
 }
 
-var concordedManagedLocation = Concordances{
+var concordedManagedLocationByConceptId = Concordances{
 	[]Concordance{
 		{
 			Concept{
@@ -78,6 +78,19 @@ var concordedManagedLocation = Concordances{
 				APIURL: "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
 			Identifier{
 				Authority:       "http://api.ft.com/system/UPP",
+				IdentifierValue: "5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
+		},
+	},
+}
+
+var concordedManagedLocationByAuthority = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44",
+				APIURL: "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/ManagedLocation",
 				IdentifierValue: "5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
 		},
 	},
@@ -302,6 +315,24 @@ func TestNeoReadByAuthority_NewModel_Concorded(t *testing.T) {
 	readConceptAndCompare(t, Concordances{[]Concordance{concordedBrandSmartlogic}}, conc, "TestNeoReadByAuthority_NewModel_Concorded")
 }
 
+func TestNeoReadByConceptId_ManagedLocation(t *testing.T) {
+	assert := assert.New(t)
+	db := getDatabaseConnection(t, assert)
+	conceptRW := concepts.NewConceptService(db)
+	assert.NoError(conceptRW.Initialise())
+
+	writeGenericConceptJSONToService(conceptRW, "./fixtures/ManagedLocation-Concorded-5aba454b-3e31-31b9-bdeb-0caf83f62b44.json", assert)
+	defer cleanUp(assert, db)
+
+	undertest := NewCypherDriver(db, "prod")
+	conc, found, err := undertest.ReadByConceptID([]string{"5aba454b-3e31-31b9-bdeb-0caf83f62b44"})
+	assert.NoError(err)
+	assert.True(found)
+	assert.Equal(6, len(conc.Concordance))
+
+	readConceptAndCompare(t, concordedManagedLocationByConceptId, conc, "TestNeoReadByConceptId_ManagedLocation")
+}
+
 func TestNeoReadByAuthority_ManagedLocation(t *testing.T) {
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
@@ -317,7 +348,7 @@ func TestNeoReadByAuthority_ManagedLocation(t *testing.T) {
 	assert.True(found)
 	assert.Equal(1, len(conc.Concordance))
 
-	readConceptAndCompare(t, concordedManagedLocation, conc, "TestNeoReadByAuthority_ManagedLocation")
+	readConceptAndCompare(t, concordedManagedLocationByAuthority, conc, "TestNeoReadByAuthority_ManagedLocation")
 }
 
 func TestNeoReadByConceptIDToConcordancesMandatoryFields(t *testing.T) {

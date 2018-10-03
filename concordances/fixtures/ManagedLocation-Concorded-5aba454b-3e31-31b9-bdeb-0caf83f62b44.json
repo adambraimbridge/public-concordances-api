@@ -11,18 +11,6 @@
   "scopeNote": "Country in Eastern Europe",
   "sourceRepresentations": [
     {
-      "uuid": "93d784bb-07a6-321d-8c01-c30d263c597a",
-      "type": "Thing",
-      "authority": "DBPedia",
-      "authorityValue": "http://dbpedia.org/resource/Romania"
-    },
-    {
-      "uuid": "37e2bcb6-0faf-3790-9871-de2d9634eb57",
-      "type": "Thing",
-      "authority": "Geonames",
-      "authorityValue": "http://sws.geonames.org/798549/"
-    },
-    {
       "uuid": "4411b761-e632-30e7-855c-06aeca76c48d",
       "type": "Location",
       "prefLabel": "Romania",
@@ -48,7 +36,7 @@
       "type": "Location",
       "prefLabel": "Romania",
       "authority": "ManagedLocation",
-      "authorityValue": "5aba454b-3e31-31b9-bdeb-0caf83f62b42",
+      "authorityValue": "5aba454b-3e31-31b9-bdeb-0caf83f62b44",
       "aliases": [
         "Romania"
       ]
