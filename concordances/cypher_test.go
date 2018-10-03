@@ -30,13 +30,57 @@ var concordedBrandSmartlogic = Concordance{
 		IdentifierValue: "b20801ac-5a76-43cf-b816-8c3b2f7133ad"},
 }
 
-var concordedBrandManagedLocation = Concordance{
-	Concept{
-		ID:     "http://api.ft.com/things/b20801ac-5a76-43cf-b816-8c3b2f7133ad",
-		APIURL: "http://api.ft.com/brands/b20801ac-5a76-43cf-b816-8c3b2f7133ad"},
-	Identifier{
-		Authority:       "http://api.ft.com/system/ManagedLocation",
-		IdentifierValue: "b20801ac-5a76-43cf-b816-8c3b2f7133ad"},
+var concordedManagedLocation = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44",
+				APIURL: "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/WIKIDATA",
+				IdentifierValue: "http://www.wikidata.org/entity/Q218"},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44",
+				APIURL: "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/FT-TME",
+				IdentifierValue: "TnN0ZWluX0dMX1JP-R0w="},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44",
+				APIURL: "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/ManagedLocation",
+				IdentifierValue: "5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44",
+				APIURL: "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/UPP",
+				IdentifierValue: "4534282c-d3ee-3595-9957-81a9293200f3"},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44",
+				APIURL: "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/UPP",
+				IdentifierValue: "4411b761-e632-30e7-855c-06aeca76c48d"},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44",
+				APIURL: "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/UPP",
+				IdentifierValue: "5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
+		},
+	},
 }
 
 var concordedBrandSmartlogicUPP = Concordance{
@@ -258,7 +302,6 @@ func TestNeoReadByAuthority_NewModel_Concorded(t *testing.T) {
 	readConceptAndCompare(t, Concordances{[]Concordance{concordedBrandSmartlogic}}, conc, "TestNeoReadByAuthority_NewModel_Concorded")
 }
 
-
 func TestNeoReadByAuthority_ManagedLocation(t *testing.T) {
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
@@ -274,7 +317,7 @@ func TestNeoReadByAuthority_ManagedLocation(t *testing.T) {
 	assert.True(found)
 	assert.Equal(1, len(conc.Concordance))
 
-	readConceptAndCompare(t, Concordances{[]Concordance{concordedBrandManagedLocation}}, conc, "TestNeoReadByAuthority_ManagedLocation")
+	readConceptAndCompare(t, concordedManagedLocation, conc, "TestNeoReadByAuthority_ManagedLocation")
 }
 
 func TestNeoReadByConceptIDToConcordancesMandatoryFields(t *testing.T) {
