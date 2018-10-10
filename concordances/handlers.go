@@ -106,7 +106,7 @@ func GetConcordances(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Jason, _ := json.Marshal(concordance)
-	log.Debugf("Concordance(uuid:%s): %s\n", Jason)
+	log.Debugf("Concordance(uuid:%s): %s\n", Jason, Jason)
 	w.Header().Set("Cache-Control", CacheControlHeader)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(concordance)

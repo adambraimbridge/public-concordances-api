@@ -187,14 +187,15 @@ func neoReadStructToConcordances(neo []neoReadStruct, env string) (concordances 
 
 // Map of authority to URI for the supported concordance IDs
 var authorityMap = map[string]string{
-	"TME":        "http://api.ft.com/system/FT-TME",
-	"FACTSET":    "http://api.ft.com/system/FACTSET",
-	"UPP":        "http://api.ft.com/system/UPP",
-	"LEI":        "http://api.ft.com/system/LEI",
-	"Smartlogic": "http://api.ft.com/system/SMARTLOGIC",
-	"Geonames":   "http://api.ft.com/system/GEONAMES",
-	"Wikidata":   "http://api.ft.com/system/WIKIDATA",
-	"DBPedia":    "http://api.ft.com/system/DBPEDIA",
+	"TME":             "http://api.ft.com/system/FT-TME",
+	"FACTSET":         "http://api.ft.com/system/FACTSET",
+	"UPP":             "http://api.ft.com/system/UPP",
+	"LEI":             "http://api.ft.com/system/LEI",
+	"Smartlogic":      "http://api.ft.com/system/SMARTLOGIC",
+	"ManagedLocation": "http://api.ft.com/system/ManagedLocation",
+	"Geonames":        "http://api.ft.com/system/GEONAMES",
+	"Wikidata":        "http://api.ft.com/system/WIKIDATA",
+	"DBPedia":         "http://api.ft.com/system/DBPEDIA",
 }
 
 func AuthorityFromURI(uri string) (string, bool) {

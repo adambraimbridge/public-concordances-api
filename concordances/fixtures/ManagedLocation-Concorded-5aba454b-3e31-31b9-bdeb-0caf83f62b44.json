@@ -1,0 +1,45 @@
+{
+  "prefUUID": "5aba454b-3e31-31b9-bdeb-0caf83f62b44",
+  "prefLabel": "Romania",
+  "type": "Location",
+  "aliases": [
+    "Roumanie",
+    "Rumanía",
+    "Rumänien",
+    "Romania"
+  ],
+  "scopeNote": "Country in Eastern Europe",
+  "sourceRepresentations": [
+    {
+      "uuid": "4411b761-e632-30e7-855c-06aeca76c48d",
+      "type": "Location",
+      "prefLabel": "Romania",
+      "authority": "TME",
+      "authorityValue": "TnN0ZWluX0dMX1JP-R0w=",
+      "aliases": [
+        "Romania",
+        "Roumanie",
+        "Rumanía",
+        "Rumänien"
+      ]
+    },
+    {
+      "uuid": "4534282c-d3ee-3595-9957-81a9293200f3",
+      "type": "Location",
+      "prefLabel": "Romania",
+      "authority": "Wikidata",
+      "authorityValue": "http://www.wikidata.org/entity/Q218",
+      "scopeNote": "Country in Eastern Europe"
+    },
+    {
+      "uuid": "5aba454b-3e31-31b9-bdeb-0caf83f62b44",
+      "type": "Location",
+      "prefLabel": "Romania",
+      "authority": "ManagedLocation",
+      "authorityValue": "5aba454b-3e31-31b9-bdeb-0caf83f62b44",
+      "aliases": [
+        "Romania"
+      ]
+    }
+  ]
+}
