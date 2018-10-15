@@ -192,7 +192,7 @@ var authorityMap = map[string]string{
 	"UPP":             "http://api.ft.com/system/UPP",
 	"LEI":             "http://api.ft.com/system/LEI",
 	"Smartlogic":      "http://api.ft.com/system/SMARTLOGIC",
-	"ManagedLocation": "http://api.ft.com/system/ManagedLocation",
+	"ManagedLocation": "http://api.ft.com/system/MANAGEDLOCATION",
 	"Geonames":        "http://api.ft.com/system/GEONAMES",
 	"Wikidata":        "http://api.ft.com/system/WIKIDATA",
 	"DBPedia":         "http://api.ft.com/system/DBPEDIA",

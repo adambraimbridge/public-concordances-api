@@ -53,7 +53,7 @@ var concordedManagedLocationByConceptId = Concordances{
 				ID:     "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44",
 				APIURL: "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
 			Identifier{
-				Authority:       "http://api.ft.com/system/ManagedLocation",
+				Authority:       "http://api.ft.com/system/MANAGEDLOCATION",
 				IdentifierValue: "5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
 		},
 		{
@@ -90,7 +90,7 @@ var concordedManagedLocationByAuthority = Concordances{
 				ID:     "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44",
 				APIURL: "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
 			Identifier{
-				Authority:       "http://api.ft.com/system/ManagedLocation",
+				Authority:       "http://api.ft.com/system/MANAGEDLOCATION",
 				IdentifierValue: "5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
 		},
 	},
@@ -343,7 +343,7 @@ func TestNeoReadByAuthority_ManagedLocation(t *testing.T) {
 	defer cleanUp(assert, db)
 
 	undertest := NewCypherDriver(db, "prod")
-	conc, found, err := undertest.ReadByAuthority("http://api.ft.com/system/ManagedLocation", []string{"5aba454b-3e31-31b9-bdeb-0caf83f62b44"})
+	conc, found, err := undertest.ReadByAuthority("http://api.ft.com/system/MANAGEDLOCATION", []string{"5aba454b-3e31-31b9-bdeb-0caf83f62b44"})
 	assert.NoError(err)
 	assert.True(found)
 	assert.Equal(1, len(conc.Concordance))
