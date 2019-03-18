@@ -114,6 +114,18 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 			},
 			Result: &results,
 		}
+	} else if authorityProperty == "IsoCode" {
+		//hacky way to retrieve prefUUID of the canonical
+		// via matching the managedlocation source by isoCode
+		query = &neoism.CypherQuery{
+			Statement: `
+		MATCH (p:Concept)
+		WHERE exists(p.isoCode)
+		WHERE p.isoCode IN {authorityValue}
+		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
+		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, p.uuid as UUID, 'ISO-3166-1' as authority, p.isoCode as authorityValue
+			`,
+		}
 	} else {
 		query = &neoism.CypherQuery{
 			Statement: `
@@ -193,6 +205,7 @@ var authorityMap = map[string]string{
 	"LEI":             "http://api.ft.com/system/LEI",
 	"Smartlogic":      "http://api.ft.com/system/SMARTLOGIC",
 	"ManagedLocation": "http://api.ft.com/system/MANAGEDLOCATION",
+	"IsoCode":         "http://api.ft.com/system/ISO-3166-1",
 	"Geonames":        "http://api.ft.com/system/GEONAMES",
 	"Wikidata":        "http://api.ft.com/system/WIKIDATA",
 	"DBPedia":         "http://api.ft.com/system/DBPEDIA",
