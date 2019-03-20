@@ -36,22 +36,22 @@ func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Conc
 	var results []neoReadStruct
 	query := &neoism.CypherQuery{
 		Statement: `
-		MATCH (p:Concept)
+		MATCH (p:Thing)
 		WHERE p.uuid in {identifiers}
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
-		MATCH (canonical)<-[:EQUIVALENT_TO]-(leafNode:Concept)
+		MATCH (canonical)<-[:EQUIVALENT_TO]-(leafNode:Thing)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, leafNode.authority as authority, leafNode.authorityValue as authorityValue
 		UNION ALL
-		MATCH (p:Concept)
+		MATCH (p:Thing)
 		WHERE p.uuid in {identifiers}
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
 		WHERE exists(canonical.leiCode)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, 'LEI' as authority, canonical.leiCode as authorityValue
 		UNION ALL
-		MATCH (p:Concept)
+		MATCH (p:Thing)
 		WHERE p.uuid in {identifiers}
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
-		MATCH (canonical)<-[:EQUIVALENT_TO]-(leafNode:Concept)
+		MATCH (canonical)<-[:EQUIVALENT_TO]-(leafNode:Thing)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, 'UPP' as authority, leafNode.uuid as authorityValue
         `,
 		Parameters: neoism.Props{"identifiers": identifiers},
