@@ -34,7 +34,7 @@ Based on the following [google doc](https://docs.google.com/a/ft.com/document/d/
     - GET /__gtg 
 
 ## Error handling
-[Run book](https://dewey.in.ft.com/view/system/public-concordances-api) - [Panic guide](https://sites.google.com/a/ft.com/universal-publishing/ops-guides/panic-guides/concordances-read)
+[Run book](https://biz-ops.in.ft.com/System/public-concordances-api) - [Panic guide](https://sites.google.com/a/ft.com/universal-publishing/ops-guides/panic-guides/concordances-read)
 - The service expects at least 1 conceptId or (authority + identifierValue pair) parameter and will respond with an Error HTTP status code if these are not provided.
 - The service will respond with Error HTTP codes if both a conceptId is presented with an authority parameter or if an identifierValue is presented without the authority parameter.
 - The service will never respond with Error HTTP status codes if none of the conceptId's or identifierValues are present in concordance,
