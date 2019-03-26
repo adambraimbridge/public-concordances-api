@@ -53,7 +53,7 @@ func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Conc
 		WHERE p.uuid in {identifiers}
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
 		WHERE exists(canonical.iso31661)
-		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, 'ISO-3166-1' as authority, canonical.iso13661 as authorityValue
+		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, 'ISO-3166-1' as authority, canonical.iso31661 as authorityValue
 		UNION ALL
 		MATCH (p:Thing)
 		WHERE p.uuid in {identifiers}
@@ -128,7 +128,7 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 		WHERE exists(p.iso31661)
 		AND p.iso31661 IN {authorityValue}
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
-		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, p.uuid as UUID, 'ISO-3166-1' as authority, p.iso13661 as authorityValue
+		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, p.uuid as UUID, 'ISO-3166-1' as authority, p.iso31661 as authorityValue
 			`,
 			Parameters: neoism.Props{
 				"authorityValue": identifierValues,
