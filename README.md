@@ -13,12 +13,22 @@ Installation assumes that `go` and `dep` have been installed and are available o
 * `cd $GOPATH/src/github.com/Financial-Times/public-concordances-api`
 * `dep ensure`
 * `go install`
-* `$GOPATH/bin/public-concordances-api --neo-url={neo4jUrl} --port={port}`
+* `$GOPATH/bin/public-concordances-api --neo-url={neo4jUrl} --port={port}`	
 
 _Both arguments are optional. \
 --neo-url defaults to http://localhost:7474/db/data, which is the out of box url for a local neo4j instance. \
 --port defaults to 8080._ 
 
+Running the tests
+
+    docker run --rm \
+    --publish=7474:7474 --publish=7687:7687 \
+    -e NEO4J_ACCEPT_LICENSE_AGREEMENT="yes" \
+    -e NEO4J_AUTH="none" \
+    neo4j:3.2.7-enterprise
+    
+    go test -race ./...	
+    
 ## API Endpoints
 Based on the following [google doc](https://docs.google.com/a/ft.com/document/d/1onyyb-XoByB00RQNZvjNoL_IsO_eHKe-vOpUuAVHyJE)
 
@@ -34,7 +44,7 @@ Based on the following [google doc](https://docs.google.com/a/ft.com/document/d/
     - GET /__gtg 
 
 ## Error handling
-[Run book](https://dewey.in.ft.com/view/system/public-concordances-api) - [Panic guide](https://sites.google.com/a/ft.com/universal-publishing/ops-guides/panic-guides/concordances-read)
+[Run book](https://biz-ops.in.ft.com/System/public-concordances-api) - [Panic guide](https://sites.google.com/a/ft.com/universal-publishing/ops-guides/panic-guides/concordances-read)
 - The service expects at least 1 conceptId or (authority + identifierValue pair) parameter and will respond with an Error HTTP status code if these are not provided.
 - The service will respond with Error HTTP codes if both a conceptId is presented with an authority parameter or if an identifierValue is presented without the authority parameter.
 - The service will never respond with Error HTTP status codes if none of the conceptId's or identifierValues are present in concordance,

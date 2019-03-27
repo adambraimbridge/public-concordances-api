@@ -36,22 +36,29 @@ func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Conc
 	var results []neoReadStruct
 	query := &neoism.CypherQuery{
 		Statement: `
-		MATCH (p:Concept)
+		MATCH (p:Thing)
 		WHERE p.uuid in {identifiers}
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
-		MATCH (canonical)<-[:EQUIVALENT_TO]-(leafNode:Concept)
+		MATCH (canonical)<-[:EQUIVALENT_TO]-(leafNode:Thing)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, leafNode.authority as authority, leafNode.authorityValue as authorityValue
 		UNION ALL
-		MATCH (p:Concept)
+
+		MATCH (p:Thing)
 		WHERE p.uuid in {identifiers}
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
 		WHERE exists(canonical.leiCode)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, 'LEI' as authority, canonical.leiCode as authorityValue
 		UNION ALL
-		MATCH (p:Concept)
+		MATCH (p:Thing)
 		WHERE p.uuid in {identifiers}
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
-		MATCH (canonical)<-[:EQUIVALENT_TO]-(leafNode:Concept)
+		WHERE exists(canonical.iso31661)
+		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, 'ISO-3166-1' as authority, canonical.iso31661 as authorityValue
+		UNION ALL
+		MATCH (p:Thing)
+		WHERE p.uuid in {identifiers}
+		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
+		MATCH (canonical)<-[:EQUIVALENT_TO]-(leafNode:Thing)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, 'UPP' as authority, leafNode.uuid as authorityValue
         `,
 		Parameters: neoism.Props{"identifiers": identifiers},
@@ -109,6 +116,20 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 		AND exists(p.prefUUID)
 		RETURN DISTINCT p.prefUUID AS canonicalUUID, labels(p) AS types, p.uuid as UUID, 'LEI' as authority, p.leiCode as authorityValue`,
 
+			Parameters: neoism.Props{
+				"authorityValue": identifierValues,
+			},
+			Result: &results,
+		}
+	} else if authorityProperty == "ISO-3166-1" {
+		query = &neoism.CypherQuery{
+			Statement: `
+		MATCH (p:Concept)
+		WHERE exists(p.iso31661)
+		AND p.iso31661 IN {authorityValue}
+		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
+		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, p.uuid as UUID, 'ISO-3166-1' as authority, p.iso31661 as authorityValue
+			`,
 			Parameters: neoism.Props{
 				"authorityValue": identifierValues,
 			},
@@ -193,6 +214,7 @@ var authorityMap = map[string]string{
 	"LEI":             "http://api.ft.com/system/LEI",
 	"Smartlogic":      "http://api.ft.com/system/SMARTLOGIC",
 	"ManagedLocation": "http://api.ft.com/system/MANAGEDLOCATION",
+	"ISO-3166-1":      "http://api.ft.com/system/ISO-3166-1",
 	"Geonames":        "http://api.ft.com/system/GEONAMES",
 	"Wikidata":        "http://api.ft.com/system/WIKIDATA",
 	"DBPedia":         "http://api.ft.com/system/DBPEDIA",
