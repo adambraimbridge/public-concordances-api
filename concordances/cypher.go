@@ -49,12 +49,14 @@ func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Conc
 		WHERE exists(canonical.leiCode)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, 'LEI' as authority, canonical.leiCode as authorityValue
 		UNION ALL
-		MATCH (p:Thing)
+
+		MATCH (p:Location)
 		WHERE p.uuid in {identifiers}
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
 		WHERE exists(canonical.iso31661)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, 'ISO-3166-1' as authority, canonical.iso31661 as authorityValue
 		UNION ALL
+
 		MATCH (p:Thing)
 		WHERE p.uuid in {identifiers}
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
@@ -124,11 +126,10 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 	} else if authorityProperty == "ISO-3166-1" {
 		query = &neoism.CypherQuery{
 			Statement: `
-		MATCH (p:Concept)
-		WHERE exists(p.iso31661)
-		AND p.iso31661 IN {authorityValue}
-		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
-		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, p.uuid as UUID, 'ISO-3166-1' as authority, p.iso31661 as authorityValue
+		MATCH (canonical:Location)
+		WHERE canonical.iso31661 IN {authorityValue}
+		AND exists(canonical.prefUUID)
+		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, canonical.uuid as UUID, 'ISO-3166-1' as authority, canonical.iso31661 as authorityValue
 			`,
 			Parameters: neoism.Props{
 				"authorityValue": identifierValues,
