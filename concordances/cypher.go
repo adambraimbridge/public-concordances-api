@@ -29,7 +29,7 @@ func NewCypherDriver(conn neoutils.NeoConnection, env string) CypherDriver {
 
 // CheckConnectivity tests neo4j by running a simple cypher query
 func (pcw CypherDriver) CheckConnectivity() error {
-	writableErr := neoutils.CheckWritable(s.conn)
+	writableErr := neoutils.CheckWritable(pcw.conn)
 	if writableErr != nil {
 		return writableErr
 	}
