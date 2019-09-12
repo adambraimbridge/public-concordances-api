@@ -19,9 +19,6 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Make go get work
-          command: sudo chown -R circleci:circleci /go
-      - run:
          name: Create test folder
          command: |
            mkdir -p ${CIRCLE_TEST_REPORTS}
