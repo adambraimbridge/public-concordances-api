@@ -7,13 +7,15 @@ This Go app provides an endpoint for the retrieval of concordance data given one
 directly depends upon a connection to a Neo4j database.
 
 ## Installation & running locally
-Installation assumes that `go` and `dep` have been installed and are available on the PATH.
 
-* `go get -u github.com/Financial-Times/public-concordances-api`
-* `cd $GOPATH/src/github.com/Financial-Times/public-concordances-api`
-* `dep ensure`
-* `go install`
-* `$GOPATH/bin/public-concordances-api --neo-url={neo4jUrl} --port={port}`	
+Installation assumes that `go` with version at least 1.13 has been installed and available in the run PATH.
+
+```shell
+go get github.com/Financial-Times/public-concordances-api
+cd $GOPATH/src/github.com/Financial-Times/public-concordances-api
+go install
+$GOPATH/bin/public-concordances-api --neo-url={neo4jUrl} --port={port}
+```
 
 _Both arguments are optional. \
 --neo-url defaults to http://localhost:7474/db/data, which is the out of box url for a local neo4j instance. \
@@ -49,7 +51,4 @@ Based on the following [google doc](https://docs.google.com/a/ft.com/document/d/
 - The service will respond with Error HTTP codes if both a conceptId is presented with an authority parameter or if an identifierValue is presented without the authority parameter.
 - The service will never respond with Error HTTP status codes if none of the conceptId's or identifierValues are present in concordance,
 instead it will return an empty array of Concepts or Identifiers.
-
-
-
 
